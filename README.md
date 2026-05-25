@@ -17,44 +17,6 @@ To install `sofistik-tools` search for [sofistik-tools](https://web.pulsar-edit.
 
 This package requires [language-sofistik](https://github.com/asiloisad/pulsar-language-sofistik).
 
-## Configuration
-
-| Setting | Description |
-| --- | --- |
-| SOFiSTiK installation path | Path to the SOFiSTiK installation folder (default: `C:\Program Files\SOFiSTiK`) |
-| Enable keystroke hints | Show info message with keystroke hints in selection lists |
-
-## Version resolution
-
-The package determines which SOFiSTiK version to use in the following priority order:
-
-1. **Shebang in file**: `@ SOFiSTiK 2026` or `@ SOFiSTiK 2024-05` comment in the file (searched backwards from cursor)
-2. **Project configuration**: `sofistik.def` file in the same directory with `SOF_VERSION = 2026`
-3. **Package setting**: Version configured in [language-sofistik](https://github.com/asiloisad/pulsar-language-sofistik) settings
-
-## Features
-
-### Help system
-
-The help view opens PDF manuals directly in Pulsar using [pdf-viewer](https://github.com/asiloisad/pulsar-pdf-viewer). When cursor is on a command, it jumps to that command's documentation.
-
-### File handlers
-
-The package registers handlers for SOFiSTiK file types. Double-clicking these files in tree-view opens them in the appropriate application:
-
-| Extension | Application |
-| --- | --- |
-| `.cdb` | Animator |
-| `.plb` | Report Viewer |
-| `.gra` | WinGRAF |
-| `.results` | Result Viewer |
-| `.sofistik` | SSD |
-| `.dwg` | SOFiPLUS (if `sofistik.def` exists) |
-
-### Child files
-
-Use `@ child:filename.dat` directive to run multiple files in sequence. Use `@ only-children` to skip the parent file itself.
-
 ## Commands
 
 Commands available in `atom-text-editor[data-grammar="source sofistik"]`:
@@ -134,6 +96,35 @@ Commands available in `.tree-view` scope:
 - `sofistik-tools:clean-glob`: Use custom glob pattern,
 - `sofistik-tools:wing-fix`: fix MSCA issues in `.gra` files,
 - `sofistik-tools:wing-fix-recursively`: fix MSCA issues recursively.
+
+## Version resolution
+
+The package determines which SOFiSTiK version to use in the following priority order:
+
+1. **Shebang in file**: `@ SOFiSTiK 2026` or `@ SOFiSTiK 2024-05` comment in the file (searched backwards from cursor)
+2. **Project configuration**: `sofistik.def` file in the same directory with `SOF_VERSION = 2026`
+3. **Package setting**: Version configured in [language-sofistik](https://github.com/asiloisad/pulsar-language-sofistik) settings
+
+## Help system
+
+The help view opens PDF manuals directly in Pulsar using [pdf-viewer](https://github.com/asiloisad/pulsar-pdf-viewer). When cursor is on a command, it jumps to that command's documentation.
+
+## File handlers
+
+The package registers handlers for SOFiSTiK file types. Double-clicking these files in tree-view opens them in the appropriate application:
+
+| Extension | Application |
+| --- | --- |
+| `.cdb` | Animator |
+| `.plb` | Report Viewer |
+| `.gra` | WinGRAF |
+| `.results` | Result Viewer |
+| `.sofistik` | SSD |
+| `.dwg` | SOFiPLUS (if `sofistik.def` exists) |
+
+## Child files
+
+Use `@ child:filename.dat` directive to run multiple files in sequence. Use `@ only-children` to skip the parent file itself.
 
 ## Contributing
 
