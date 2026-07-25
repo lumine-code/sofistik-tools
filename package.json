@@ -7,8 +7,11 @@
     "url": "https://github.com/lumine-code/sofistik-tools/issues"
   },
   "keywords": [
-    "sofistik",
-    "tools"
+    "structural-analysis",
+    "fem",
+    "cadinp",
+    "civil-engineering",
+    "wps"
   ],
   "version": "1.0.0",
   "license": "MIT",
