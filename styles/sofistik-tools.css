@@ -1,0 +1,14 @@
+/*
+ * Lumine exposes the editor theme variables as CSS custom properties, so the
+ * old ui-variables Less import and its @-prefixed variable references become
+ * var(--*).
+ */
+
+.example-list .tag {
+  margin-right: 5px;
+  border: solid 1px;
+  padding: 0.2em 0.4em;
+  border-radius: 6px;
+  vertical-align: baseline;
+  color: var(--syntax-color-constant);
+}

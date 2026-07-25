@@ -1,17 +1,27 @@
 {
   "name": "sofistik-tools",
+  "author": "lumine-code",
   "description": "Commands and integrations for SOFiSTiK structural analysis workflow",
-  "repository": "https://github.com/asiloisad/pulsar-sofistik-tools",
+  "repository": "https://github.com/lumine-code/sofistik-tools",
+  "bugs": {
+    "url": "https://github.com/lumine-code/sofistik-tools/issues"
+  },
   "keywords": [
     "sofistik",
     "tools"
   ],
-  "version": "1.4.17",
+  "version": "2.0.0",
   "license": "MIT",
   "engines": {
     "atom": ">=1.100.0 <2.0.0"
   },
   "main": "./lib/main",
+  "scripts": {
+    "test": "cd ../lumine && npm run test:only -- ../sofistik-tools/spec",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
   "consumedServices": {
     "tree-view": {
       "versions": {
@@ -28,24 +38,29 @@
         "^2.0.0": "consumeSofistikKeywords"
       }
     },
-    "pdf-viewer": {
+    "pdf-view": {
       "versions": {
-        "^1.0.0": "consumePdfViewer"
+        "^1.0.0": "consumePdfView"
       }
     }
   },
-  "dependencies": {
-    "glob": "^13.0.1",
-    "minimatch": "^5.1.6",
-    "@asiloisad/select-list": "^1.6.0"
-  },
   "configSchema": {
     "envPath": {
-      "order": 1,
       "title": "SOFiSTiK installation path",
       "description": "Path to the SOFiSTiK installation folder.",
       "type": "string",
       "default": "C:\\Program Files\\SOFiSTiK"
     }
+  },
+  "dependencies": {
+    "@lumine-code/select-list": "https://github.com/lumine-code/select-list.git#fbbc2d9660db6a2ff676c7a3baf7536f96ec34e6"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.8.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-n": "^18.2.2",
+    "globals": "^17.7.0",
+    "prettier": "^3.9.6"
   }
 }

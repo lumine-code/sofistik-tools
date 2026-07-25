@@ -1,21 +1,19 @@
 # sofistik-tools
 
-Commands and integrations for SOFiSTiK structural analysis workflow.
+Commands and integrations for SOFiSTiK structural analysis workflow. Requires [language-sofistik](https://github.com/lumine-code/language-sofistik).
 
 ## Features
 
-- **Help system**: Open PDF manuals in [pdf-viewer](https://github.com/asiloisad/pulsar-pdf-viewer).
-- **Calculation**: Run WPS/SPS directly from the editor.
-- **File handlers**: Open CDB, PLB, GRA files with double-click.
-- **Program control**: Toggle programs on/off in `.dat` files.
-- **Clean commands**: Delete temporary files from tree-view.
-- **Child files**: Run multiple files with `@ child:filename.dat` directive.
+- **Help system**: open PDF manuals in [pdf-view](https://github.com/lumine-code/pdf-view) with jump-to-command support.
+- **Calculation**: run WPS/SPS directly from the editor.
+- **File handlers**: open CDB, PLB, GRA files with double-click.
+- **Program control**: toggle programs on/off in `.dat` files.
+- **Clean commands**: delete temporary files from tree-view.
+- **Child files**: run multiple files with `@ child:filename.dat` directive.
 
 ## Installation
 
-To install `sofistik-tools` search for [sofistik-tools](https://web.pulsar-edit.dev/packages/sofistik-tools) in the Install pane of the Pulsar settings or run `ppm install sofistik-tools`. Alternatively, you can run `ppm install asiloisad/pulsar-sofistik-tools` to install a package directly from the GitHub repository.
-
-This package requires [language-sofistik](https://github.com/asiloisad/pulsar-language-sofistik).
+To install `sofistik-tools` search for _sofistik-tools_ in the Install pane of the Lumine settings or run `lumine --install lumine-code/sofistik-tools`.
 
 ## Commands
 
@@ -58,8 +56,9 @@ Commands available in `atom-text-editor[data-grammar="source sofistik"]`:
 - `sofistik-tools:program-below-on`: turn ON programs below cursor,
 - `sofistik-tools:program-below-off`: turn OFF programs below cursor,
 - `sofistik-tools:clear-urs-tags`: remove all URS tags from programs,
+- `sofistik-tools:check-version`: show the resolved SOFiSTiK version.
 
-Commands available in `atom-workspace` scope:
+Commands available in `atom-workspace`:
 
 - `sofistik-tools:toggle-help`: open help selection list,
 - `sofistik-tools:cache-help`: rebuild help cache,
@@ -69,8 +68,9 @@ Commands available in `atom-workspace` scope:
 - `sofistik-tools:ifc-export`: open IFC export dialog,
 - `sofistik-tools:ifc-import`: open IFC import dialog,
 - `sofistik-tools:open-cdbase.chm`: open database description (CDBASE.CHM),
+- `sofistik-tools:open-sof-daten`: open `sofistik_daten.py` from the installation.
 
-Commands available in `.tree-view` scope:
+Commands available in `.tree-view`:
 
 - `sofistik-tools:open-animator`: open selected `.cdb` in Animator,
 - `sofistik-tools:open-animator-2018`: open selected `.cdb` in Animator 2018,
@@ -89,42 +89,47 @@ Commands available in `.tree-view` scope:
 - `sofistik-tools:open-teddy-n`: open in Teddy slot n=1-4,
 - `sofistik-tools:open-sofiplus`: open selected `.dwg` in SOFiPLUS,
 - `sofistik-tools:export-cdb`: open CDB export for selected file,
+- `sofistik-tools:check-version`: show the resolved SOFiSTiK version,
 - `sofistik-tools:clean-1`: clean directory from files with extensions `.erg` `.prt` `.lst` `.urs` `.sdb` `.db-2` `.pl` `.$*` `.#*` `.grb` `.err` `.error_positions` `.dwl` `.dwl2` `.cfg`,
 - `sofistik-tools:clean-2`: above + `.cdi` `.cde`,
 - `sofistik-tools:clean-3`: above + `.cdb` `.sqlite`,
 - `sofistik-tools:clean-4`: above + `.plb` `.bak` `_csm.dat` `_csmlf.dat`,
-- `sofistik-tools:clean-glob`: Use custom glob pattern,
+- `sofistik-tools:clean-glob`: use custom glob pattern,
 - `sofistik-tools:wing-fix`: fix MSCA issues in `.gra` files,
 - `sofistik-tools:wing-fix-recursively`: fix MSCA issues recursively.
 
-## Version resolution
+Each `clean-n` command also has a `clean-n-recursively` variant that descends into subdirectories.
+
+## Usage
 
 The package determines which SOFiSTiK version to use in the following priority order:
 
 1. **Shebang in file**: `@ SOFiSTiK 2026` or `@ SOFiSTiK 2024-05` comment in the file (searched backwards from cursor)
 2. **Project configuration**: `sofistik.def` file in the same directory with `SOF_VERSION = 2026`
-3. **Package setting**: Version configured in [language-sofistik](https://github.com/asiloisad/pulsar-language-sofistik) settings
+3. **Package setting**: version configured in [language-sofistik](https://github.com/lumine-code/language-sofistik) settings
 
-## Help system
+The help view opens PDF manuals directly in Lumine using [pdf-view](https://github.com/lumine-code/pdf-view). When the cursor is on a command, it jumps to that command's documentation.
 
-The help view opens PDF manuals directly in Pulsar using [pdf-viewer](https://github.com/asiloisad/pulsar-pdf-viewer). When cursor is on a command, it jumps to that command's documentation.
+Double-clicking SOFiSTiK file types in tree-view opens them in the appropriate application: `.cdb` in Animator, `.plb` in Report Viewer, `.gra` in WinGRAF, `.results` in Result Viewer, `.sofistik` in SSD, and `.dwg` in SOFiPLUS (if an adjacent `.dat` exists).
 
-## File handlers
+Use the `@ child:filename.dat` directive to run multiple files in sequence, and `@ only-children` to skip the parent file itself.
 
-The package registers handlers for SOFiSTiK file types. Double-clicking these files in tree-view opens them in the appropriate application:
+## Customization
 
-| Extension | Application |
-| --- | --- |
-| `.cdb` | Animator |
-| `.plb` | Report Viewer |
-| `.gra` | WinGRAF |
-| `.results` | Result Viewer |
-| `.sofistik` | SSD |
-| `.dwg` | SOFiPLUS (if `sofistik.def` exists) |
+The examples list can be restyled from your `styles.less`, e.g.:
 
-## Child files
+```less
+.example-list .tag {
+  color: var(--text-color-info);
+}
+```
 
-Use `@ child:filename.dat` directive to run multiple files in sequence. Use `@ only-children` to skip the parent file itself.
+## Services
+
+- **tree-view** (`^1.0.0`): consumed to read the selected paths for the tree-view commands (open, clean, wing-fix).
+- **open-external** (`^1.0.0`): consumed to register handlers that open SOFiSTiK file types in their native applications.
+- **sofistik.keywords** (`^2.0.0`): consumed to resolve the SOFiSTiK version and keyword lists from language-sofistik.
+- **pdf-view** (`^1.0.0`): consumed to open and reuse PDF manual viewers with named-destination navigation.
 
 ## Contributing
 
