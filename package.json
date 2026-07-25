@@ -1,7 +1,7 @@
 {
   "name": "sofistik-tools",
   "author": "lumine-code",
-  "description": "Commands and integrations for SOFiSTiK structural analysis workflow",
+  "description": "Commands and integrations for SOFiSTiK structural analysis workflows.",
   "repository": "https://github.com/lumine-code/sofistik-tools",
   "bugs": {
     "url": "https://github.com/lumine-code/sofistik-tools/issues"

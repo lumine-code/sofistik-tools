@@ -1,6 +1,8 @@
 # sofistik-tools
 
-Commands and integrations for SOFiSTiK structural analysis workflow. Requires [language-sofistik](https://github.com/lumine-code/language-sofistik).
+Commands and integrations for SOFiSTiK structural analysis workflows.
+
+Requires [language-sofistik](https://github.com/lumine-code/language-sofistik).
 
 ## Features
 
