@@ -403,7 +403,7 @@ describe("sofistik-tools", () => {
 
   describe("tree-view service integration", () => {
     it("uses the selected paths for tree commands", () => {
-      const disposable = mainModule.consumeTreeView({
+      const disposable = mainModule.consumeTreeViewSelection({
         selectedPaths: () => ["C:\\proj\\a.dat", "C:\\proj\\b.dat"],
       });
       spyOn(mainModule, "openTeddy");
