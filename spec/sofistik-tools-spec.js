@@ -378,7 +378,7 @@ describe("sofistik-tools", () => {
   describe("open-external service integration", () => {
     it("registers a handler that dispatches SOFiSTiK file types", () => {
       let handler = null;
-      const disposable = mainModule.consumeOpenExternalService({
+      const disposable = mainModule.consumeOpenExternal({
         registerHandler(options) {
           handler = options;
           return { dispose() {} };
