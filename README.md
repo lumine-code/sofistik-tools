@@ -128,10 +128,10 @@ The examples list can be restyled from your `styles.less`, e.g.:
 
 ## Services
 
-- **[tree-view.selection](https://lumine-code.github.io/docs.html#services/tree-view.selection)** (`^1.0.0`): consumed to read the selected paths for the tree-view commands (open, clean, wing-fix).
-- **[open-external](https://lumine-code.github.io/docs.html#services/open-external)** (`^1.0.0`): consumed to register handlers that open SOFiSTiK file types in their native applications.
-- **[sofistik.keywords](https://lumine-code.github.io/docs.html#services/sofistik.keywords)** (`^1.0.0`): consumed to resolve the SOFiSTiK version and keyword lists from language-sofistik.
-- **[pdf-view](https://lumine-code.github.io/docs.html#services/pdf-view)** (`^1.0.0`): consumed to open and reuse PDF manual viewers with named-destination navigation.
+- **tree-view.selection** (`^1.0.0`): consumed to read the selected paths for the tree-view commands (open, clean, wing-fix).
+- **open-external** (`^1.0.0`): consumed to register handlers that open SOFiSTiK file types in their native applications.
+- **sofistik.keywords** (`^1.0.0`): consumed to resolve the SOFiSTiK version and keyword lists from language-sofistik.
+- **pdf-view** (`^1.0.0`): consumed to open and reuse PDF manual viewers with named-destination navigation.
 
 ## Contributing
 
