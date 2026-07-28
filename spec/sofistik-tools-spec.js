@@ -2,6 +2,20 @@ const path = require("path");
 const fs = require("fs");
 const os = require("os");
 
+// The shared modal vocabulary lives in the editor checkout, which sits beside
+// this package in CI but two levels up in the development workspace, so it is
+// resolved through the running editor rather than a fixed relative path.
+const {
+  activeSession,
+  modalElement,
+  isModalOpen,
+  visibleItems,
+  visibleLabels,
+  setQuery,
+  confirmItem,
+  settle,
+} = require(path.join(atom.getLoadSettings().resourcePath, "spec", "helpers", "modal-helpers"));
+
 describe("sofistik-tools", () => {
   let workspaceElement, mainModule, tempDirs;
 
@@ -44,6 +58,11 @@ describe("sofistik-tools", () => {
   });
 
   afterEach(() => {
+    // A session left open outlives the spec that opened it and would be the
+    // one the next spec finds.
+    if (isModalOpen()) {
+      atom.modals.cancel("spec");
+    }
     for (const dir of tempDirs) {
       try {
         fs.rmSync(dir, { recursive: true, force: true });
@@ -412,6 +431,127 @@ describe("sofistik-tools", () => {
       disposable.dispose();
       expect(mainModule.treeView).toBe(null);
       expect(mainModule.treeOpenTeddy()).toBeUndefined();
+    });
+  });
+
+  describe("version picker", () => {
+    it("lists the supported versions and writes the chosen one", async () => {
+      atom.commands.dispatch(workspaceElement, "sofistik-tools:change-version");
+      await settle();
+      expect(isModalOpen()).toBe(true);
+      expect(activeSession().view.id).toBe("sofistik-tools.versions");
+      expect(visibleItems()).toEqual([
+        "Auto",
+        "2026",
+        "2025",
+        "2024",
+        "2023",
+        "2022",
+        "2020",
+        "2018",
+      ]);
+
+      await confirmItem("2018");
+      expect(atom.config.get("language-sofistik.version")).toBe("2018");
+      expect(isModalOpen()).toBe(false);
+    });
+
+    it("closes again on a second toggle", async () => {
+      atom.commands.dispatch(workspaceElement, "sofistik-tools:change-version");
+      await settle();
+      atom.commands.dispatch(workspaceElement, "sofistik-tools:change-version");
+      expect(isModalOpen()).toBe(false);
+    });
+  });
+
+  describe("help picker", () => {
+    let sofPath;
+
+    beforeEach(() => {
+      const envPath = makeTempDir();
+      sofPath = path.join(envPath, "2026", "SOFiSTiK 2026");
+      fs.mkdirSync(sofPath, { recursive: true });
+      // `sofimshc_0.pdf` is the German manual, which the name filter drops.
+      for (const name of ["aqua_1.pdf", "ase.pdf", "sofimshc_0.pdf", "notes.txt"]) {
+        fs.writeFileSync(path.join(sofPath, name), "x");
+      }
+      atom.config.set("sofistik-tools.envPath", envPath);
+    });
+
+    it("lists the manuals of the resolved installation", async () => {
+      atom.commands.dispatch(workspaceElement, "sofistik-tools:toggle-help");
+      await settle();
+      expect(activeSession().view.id).toBe("sofistik-tools.help");
+      expect(visibleLabels().sort()).toEqual(["AQUA", "ASE"]);
+    });
+
+    it("opens the selected manual in the editor", async () => {
+      const opened = [];
+      spyOn(atom.workspace, "open").and.callFake((uri) => {
+        opened.push(uri);
+        return Promise.resolve();
+      });
+      atom.commands.dispatch(workspaceElement, "sofistik-tools:toggle-help");
+      await settle();
+      await confirmItem((item) => item.displayName === "AQUA");
+      expect(opened).toEqual([path.join(sofPath, "aqua_1.pdf")]);
+      expect(isModalOpen()).toBe(false);
+    });
+
+    it("peels a named destination off the query", async () => {
+      const opened = [];
+      spyOn(atom.workspace, "open").and.callFake((uri) => {
+        opened.push(uri);
+        return Promise.resolve();
+      });
+      atom.commands.dispatch(workspaceElement, "sofistik-tools:toggle-help");
+      await settle();
+      setQuery("aqua:lc 4");
+      await settle();
+
+      // The suffix filters nothing; it travels on the query to the destination.
+      expect(activeSession().getQuery().text).toBe("aqua");
+      expect(activeSession().getQuery().dest).toBe("lc 4");
+      expect(visibleLabels()).toEqual(["AQUA"]);
+
+      await confirmItem((item) => item.displayName === "AQUA");
+      expect(opened).toEqual([`${path.join(sofPath, "aqua_1.pdf")}#nameddest=LC4`]);
+    });
+
+    it("binds the external opener inside the view", async () => {
+      atom.commands.dispatch(workspaceElement, "sofistik-tools:toggle-help");
+      await settle();
+      const bindings = atom.keymaps
+        .findKeyBindings({ target: modalElement() })
+        .map((binding) => `${binding.keystrokes} ${binding.command}`);
+      expect(bindings).toContain("alt-enter modals:open-ex");
+      expect(bindings).toContain("enter modals:open-in");
+    });
+  });
+
+  describe("example picker", () => {
+    it("lists examples with their program tag and opens the selected one", async () => {
+      const envPath = makeTempDir();
+      const sofPath = path.join(envPath, "2026", "SOFiSTiK 2026");
+      const example = path.join("aqua.dat", "english", "beam.dat");
+      fs.mkdirSync(path.join(sofPath, "aqua.dat", "english"), { recursive: true });
+      fs.writeFileSync(path.join(sofPath, example), "x");
+      atom.config.set("sofistik-tools.envPath", envPath);
+      atom.config.set("language-sofistik.language", "English");
+
+      atom.commands.dispatch(workspaceElement, "sofistik-tools:toggle-examples");
+      await settle();
+      expect(activeSession().view.id).toBe("sofistik-tools.examples");
+      expect(visibleItems().map((item) => item.text)).toEqual(["beam.dat aqua"]);
+      expect(modalElement().querySelector(".tag").textContent).toBe("aqua");
+
+      const opened = [];
+      spyOn(atom.workspace, "open").and.callFake((uri) => {
+        opened.push(uri);
+        return Promise.resolve();
+      });
+      await confirmItem((item) => item.title === "beam.dat");
+      expect(opened).toEqual([path.join(sofPath, example)]);
     });
   });
 });
