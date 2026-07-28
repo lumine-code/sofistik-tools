@@ -553,5 +553,26 @@ describe("sofistik-tools", () => {
       await confirmItem((item) => item.title === "beam.dat");
       expect(opened).toEqual([path.join(sofPath, example)]);
     });
+
+    it("redraws the row on a render that reuses the cached row", async () => {
+      const envPath = makeTempDir();
+      const sofPath = path.join(envPath, "2026", "SOFiSTiK 2026");
+      fs.mkdirSync(path.join(sofPath, "aqua.dat", "english"), { recursive: true });
+      fs.writeFileSync(path.join(sofPath, "aqua.dat", "english", "beam.dat"), "x");
+      atom.config.set("sofistik-tools.envPath", envPath);
+      atom.config.set("language-sofistik.language", "English");
+
+      atom.commands.dispatch(workspaceElement, "sofistik-tools:toggle-examples");
+      await settle();
+      const drawn = () => modalElement().querySelector("ol.list-group > li").textContent;
+      const first = drawn();
+      expect(first).toContain("beam.dat");
+
+      // A status render does not invalidate the frame's row cache, so the row
+      // element is rebuilt from the same descriptor — which a DocumentFragment
+      // label would not survive.
+      activeSession().setStatus({ message: "working" });
+      expect(drawn()).toBe(first);
+    });
   });
 });
