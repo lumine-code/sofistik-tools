@@ -72,6 +72,11 @@ Commands available in `atom-workspace`:
 - `sofistik-tools:open-cdbase.chm`: open database description (CDBASE.CHM),
 - `sofistik-tools:open-sof-daten`: open `sofistik_daten.py` from the installation.
 
+Commands available in `.sofistik-tools.help-list`:
+
+- `sofistik-tools:open-in`: open the selected manual in the editor,
+- `sofistik-tools:open-ex`: open the selected manual in the system PDF viewer.
+
 Commands available in `.tree-view`:
 
 - `sofistik-tools:open-animator`: open selected `.cdb` in Animator,

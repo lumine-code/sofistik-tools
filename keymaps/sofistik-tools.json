@@ -13,7 +13,6 @@
     "f9": "sofistik-tools:open-report"
   },
   ".sofistik-tools.help-list atom-text-editor[mini]": {
-    "enter": "select-list:open-in",
-    "alt-enter": "select-list:open-ex"
+    "alt-enter": "sofistik-tools:open-ex"
   }
 }
