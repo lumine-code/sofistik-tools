@@ -16,7 +16,7 @@
   "version": "1.0.0",
   "license": "MIT",
   "engines": {
-    "lumine": ">=1.100.0 <2.0.0"
+    "lumine": "^1.0.0"
   },
   "backgroundTips": [
     "You can run a SOFiSTiK calculation on the current file with {{ 'sofistik-tools:calculation-wps' | keystroke }}"
