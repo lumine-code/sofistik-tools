@@ -123,9 +123,9 @@ Use the `@ child:filename.dat` directive to run multiple files in sequence, and 
 
 ## Customization
 
-The examples list can be restyled from your `styles.less`, e.g.:
+The examples list can be restyled from your `styles.css`, e.g.:
 
-```less
+```css
 .example-list .tag {
   color: var(--text-color-info);
 }
