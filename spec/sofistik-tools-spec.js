@@ -46,7 +46,9 @@ describe("sofistik-tools", () => {
   afterEach(() => {
     for (const dir of tempDirs) {
       try {
-        fs.rmSync(dir, { recursive: true, force: true });
+        // Retries because Windows keeps a directory non-empty until the last handle on a
+        // child closes, and `force` swallows only ENOENT.
+        fs.rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
       } catch {
         // Windows can refuse to delete busy directories.
       }
