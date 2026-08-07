@@ -1,5 +1,7 @@
 {
-  "atom-text-editor[data-grammar=\"source sofistik\"]": {
+  // :not([mini]) so these never reach a find field or a commit box, matching
+  // tasklist-tools. The handlers act on the file the grammar belongs to.
+  "atom-text-editor[data-grammar=\"source sofistik\"]:not([mini])": {
     "f5": "sofistik-tools:calculation-wps",
     "ctrl-f5": "sofistik-tools:calculation-wps-immediately",
     "shift-f5": "sofistik-tools:calculation-wps-current",
