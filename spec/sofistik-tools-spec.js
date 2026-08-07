@@ -27,10 +27,25 @@ describe("sofistik-tools", () => {
     });
   }
 
+  // A stand-in grammar rather than language-sofistik: the scope name is the
+  // whole contract between the two packages, and the commands read it from the
+  // editor now rather than from the element's data-grammar attribute.
+  function registerSofistikGrammar() {
+    if (atom.grammars.grammarForScopeName("source.sofistik")) return;
+    atom.grammars.addGrammar(
+      atom.grammars.createGrammar("sofistik.json", {
+        name: "SOFiSTiK",
+        scopeName: "source.sofistik",
+        fileTypes: ["dat"],
+        patterns: [],
+      }),
+    );
+  }
+
   async function openSofistikEditor(text = "") {
-    const editor = await atom.workspace.open();
+    registerSofistikGrammar();
+    const editor = await atom.workspace.open("model.dat");
     const editorElement = atom.views.getView(editor);
-    editorElement.dataset.grammar = "source sofistik";
     editor.setText(text);
     return { editor, editorElement };
   }

@@ -19,7 +19,8 @@ To install `sofistik-tools` search for _sofistik-tools_ in the Install pane of t
 
 ## Commands
 
-Commands available in `atom-text-editor[data-grammar="source sofistik"]`:
+Commands available in `atom-workspace`. Each acts on the active editor and
+declines with a notification when its grammar is not SOFiSTiK:
 
 - `sofistik-tools:current-help`: open help for current module in PDF viewer (reuses pane),
 - `sofistik-tools:separately-help`: open help for current module in new pane,
@@ -77,7 +78,7 @@ Commands available in `.sofistik-tools.help-list`:
 - `sofistik-tools:open-in`: open the selected manual in the editor,
 - `sofistik-tools:open-ex`: open the selected manual in the system PDF viewer.
 
-Commands available in `.tree-view`:
+Commands available in `atom-workspace`, acting on the tree view selection:
 
 - `sofistik-tools:open-animator`: open selected `.cdb` in Animator,
 - `sofistik-tools:open-animator-2018`: open selected `.cdb` in Animator 2018,
