@@ -1,20 +1,46 @@
 {
   "context-menu": {
     "atom-text-editor[data-grammar=\"source sofistik\"]:not([mini])": [
-      { "type": "separator" },
-      { "label": "Current Help", "command": "sofistik-tools:current-help" },
-      { "type": "separator" },
-      { "label": "Calculation WPS", "command": "sofistik-tools:calculation-wps" },
+      {
+        "type": "separator"
+      },
+      {
+        "label": "Current Help",
+        "command": "sofistik-tools:current-help"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "label": "Calculation WPS",
+        "command": "sofistik-tools:calculation-wps"
+      },
       {
         "label": "Calculation WPS Immediately",
         "command": "sofistik-tools:calculation-wps-immediately"
       },
-      { "label": "Calculation WPS Current", "command": "sofistik-tools:calculation-wps-current" },
-      { "type": "separator" },
-      { "label": "Open Animator", "command": "sofistik-tools:open-animator" },
-      { "label": "Open WinGRAF", "command": "sofistik-tools:open-wingraf" },
-      { "label": "Open Result Viewer", "command": "sofistik-tools:open-result-viewer" },
-      { "type": "separator" }
+      {
+        "label": "Calculation WPS Current",
+        "command": "sofistik-tools:calculation-wps-current"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "label": "Open Animator",
+        "command": "sofistik-tools:open-animator"
+      },
+      {
+        "label": "Open WinGRAF",
+        "command": "sofistik-tools:open-wingraf"
+      },
+      {
+        "label": "Open Result Viewer",
+        "command": "sofistik-tools:open-result-viewer"
+      },
+      {
+        "type": "separator"
+      }
     ]
   },
   "menu": [
@@ -24,7 +50,10 @@
         {
           "label": "SOFiSTiK Tools",
           "submenu": [
-            { "label": "Calculation WPS", "command": "sofistik-tools:calculation-wps" },
+            {
+              "label": "Calculation WPS",
+              "command": "sofistik-tools:calculation-wps"
+            },
             {
               "label": "Calculation WPS Immediately",
               "command": "sofistik-tools:calculation-wps-immediately"
@@ -33,21 +62,69 @@
               "label": "Calculation SPS Immediately",
               "command": "sofistik-tools:calculation-sps-immediately"
             },
-            { "type": "separator" },
-            { "label": "Current Help", "command": "sofistik-tools:current-help" },
-            { "label": "Open Report", "command": "sofistik-tools:open-report" },
-            { "label": "Open Protocol", "command": "sofistik-tools:open-protocol" },
-            { "label": "Open Animator", "command": "sofistik-tools:open-animator" },
-            { "label": "Open Viewer", "command": "sofistik-tools:open-viewer" },
-            { "label": "Open WinGRAF", "command": "sofistik-tools:open-wingraf" },
-            { "label": "Open Result Viewer", "command": "sofistik-tools:open-result-viewer" },
-            { "label": "Open SSD", "command": "sofistik-tools:open-ssd" },
-            { "label": "Open DBInfo", "command": "sofistik-tools:open-dbinfo" },
-            { "type": "separator" },
-            { "label": "IFC Export", "command": "sofistik-tools:ifc-export" },
-            { "label": "IFC Import", "command": "sofistik-tools:ifc-import" },
-            { "label": "Open cdbase.chm", "command": "sofistik-tools:open-cdbase.chm" },
-            { "label": "Open sofistik_daten.py", "command": "sofistik-tools:open-sof-daten" }
+            {
+              "type": "separator"
+            },
+            {
+              "label": "Current Help",
+              "command": "sofistik-tools:current-help"
+            },
+            {
+              "label": "Open",
+              "submenu": [
+                {
+                  "label": "Report",
+                  "command": "sofistik-tools:open-report"
+                },
+                {
+                  "label": "Protocol",
+                  "command": "sofistik-tools:open-protocol"
+                },
+                {
+                  "label": "Animator",
+                  "command": "sofistik-tools:open-animator"
+                },
+                {
+                  "label": "Viewer",
+                  "command": "sofistik-tools:open-viewer"
+                },
+                {
+                  "label": "WinGRAF",
+                  "command": "sofistik-tools:open-wingraf"
+                },
+                {
+                  "label": "Result Viewer",
+                  "command": "sofistik-tools:open-result-viewer"
+                },
+                {
+                  "label": "SSD",
+                  "command": "sofistik-tools:open-ssd"
+                },
+                {
+                  "label": "DBInfo",
+                  "command": "sofistik-tools:open-dbinfo"
+                }
+              ]
+            },
+            {
+              "type": "separator"
+            },
+            {
+              "label": "IFC Export",
+              "command": "sofistik-tools:ifc-export"
+            },
+            {
+              "label": "IFC Import",
+              "command": "sofistik-tools:ifc-import"
+            },
+            {
+              "label": "Open cdbase.chm",
+              "command": "sofistik-tools:open-cdbase.chm"
+            },
+            {
+              "label": "Open sofistik_daten.py",
+              "command": "sofistik-tools:open-sof-daten"
+            }
           ]
         }
       ]
