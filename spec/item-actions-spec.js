@@ -6,14 +6,14 @@ describe("sofistik-tools item actions", () => {
   let mainModule, helpList, sofDir;
 
   beforeEach(async () => {
-    jasmine.attachToDOM(atom.views.getView(atom.workspace));
-    const pack = await atom.packages.activatePackage("sofistik-tools");
+    jasmine.attachToDOM(lumine.views.getView(lumine.workspace));
+    const pack = await lumine.packages.activatePackage("sofistik-tools");
     mainModule = pack.mainModule;
     helpList = mainModule.helpList;
   });
 
   afterEach(async () => {
-    await atom.packages.deactivatePackage("sofistik-tools");
+    await lumine.packages.deactivatePackage("sofistik-tools");
     if (sofDir) {
       try {
         // Retries because Windows keeps a directory non-empty until the last handle on a
@@ -64,7 +64,7 @@ describe("sofistik-tools item actions", () => {
     await helpList.selectList.showItemActions();
 
     expect(helpList.selectList.itemActionsList.isVisible()).toBeTruthy();
-    expect(atom.workspace.getModalTrail()).toEqual(["SOFiSTiK Help", "Actions"]);
+    expect(lumine.workspace.getModalTrail()).toEqual(["SOFiSTiK Help", "Actions"]);
     // The actions list wears the package classes, so the package keymap
     // resolves action keystrokes inside it too.
     expect(helpList.selectList.itemActionsList.element.classList.contains("help-list")).toBe(true);

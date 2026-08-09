@@ -1,6 +1,6 @@
 {
   "context-menu": {
-    "atom-text-editor[data-grammar=\"source sofistik\"]:not([mini])": [
+    "lumine-text-editor[data-grammar=\"source sofistik\"]:not([mini])": [
       {
         "type": "separator"
       },

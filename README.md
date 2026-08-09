@@ -19,7 +19,7 @@ To install `sofistik-tools` search for _sofistik-tools_ in the Install pane of t
 
 ## Commands
 
-Commands available in `atom-workspace`. Each acts on the active editor and
+Commands available in `lumine-workspace`. Each acts on the active editor and
 declines with a notification when its grammar is not SOFiSTiK:
 
 - `sofistik-tools:current-help`: open help for current module in PDF viewer (reuses pane),
@@ -61,7 +61,7 @@ declines with a notification when its grammar is not SOFiSTiK:
 - `sofistik-tools:clear-urs-tags`: remove all URS tags from programs,
 - `sofistik-tools:check-version`: show the resolved SOFiSTiK version.
 
-Commands available in `atom-workspace`:
+Commands available in `lumine-workspace`:
 
 - `sofistik-tools:toggle-help`: open help selection list,
 - `sofistik-tools:cache-help`: rebuild help cache,
@@ -78,7 +78,7 @@ Commands available in `.sofistik-tools.help-list`:
 - `sofistik-tools:open-in`: open the selected manual in the editor,
 - `sofistik-tools:open-ex`: open the selected manual in the system PDF viewer.
 
-Commands available in `atom-workspace`, acting on the tree view selection:
+Commands available in `lumine-workspace`, acting on the tree view selection:
 
 - `sofistik-tools:open-animator`: open selected `.cdb` in Animator,
 - `sofistik-tools:open-animator-2018`: open selected `.cdb` in Animator 2018,

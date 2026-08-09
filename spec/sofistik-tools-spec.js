@@ -31,9 +31,9 @@ describe("sofistik-tools", () => {
   // whole contract between the two packages, and the commands read it from the
   // editor now rather than from the element's data-grammar attribute.
   function registerSofistikGrammar() {
-    if (atom.grammars.grammarForScopeName("source.sofistik")) return;
-    atom.grammars.addGrammar(
-      atom.grammars.createGrammar("sofistik.json", {
+    if (lumine.grammars.grammarForScopeName("source.sofistik")) return;
+    lumine.grammars.addGrammar(
+      lumine.grammars.createGrammar("sofistik.json", {
         name: "SOFiSTiK",
         scopeName: "source.sofistik",
         fileTypes: ["dat"],
@@ -44,17 +44,17 @@ describe("sofistik-tools", () => {
 
   async function openSofistikEditor(text = "") {
     registerSofistikGrammar();
-    const editor = await atom.workspace.open("model.dat");
-    const editorElement = atom.views.getView(editor);
+    const editor = await lumine.workspace.open("model.dat");
+    const editorElement = lumine.views.getView(editor);
     editor.setText(text);
     return { editor, editorElement };
   }
 
   beforeEach(async () => {
     tempDirs = [];
-    workspaceElement = atom.views.getView(atom.workspace);
+    workspaceElement = lumine.views.getView(lumine.workspace);
     jasmine.attachToDOM(workspaceElement);
-    const pack = await atom.packages.activatePackage("sofistik-tools");
+    const pack = await lumine.packages.activatePackage("sofistik-tools");
     mainModule = pack.mainModule;
   });
 
@@ -73,7 +73,7 @@ describe("sofistik-tools", () => {
   describe("command registration", () => {
     it("registers editor commands on sofistik grammar editors", async () => {
       const { editorElement } = await openSofistikEditor();
-      const commands = atom.commands
+      const commands = lumine.commands
         .findCommands({ target: editorElement })
         .map((command) => command.name);
       for (const name of [
@@ -90,7 +90,7 @@ describe("sofistik-tools", () => {
     });
 
     it("registers workspace commands", () => {
-      const commands = atom.commands
+      const commands = lumine.commands
         .findCommands({ target: workspaceElement })
         .map((command) => command.name);
       for (const name of [
@@ -110,7 +110,7 @@ describe("sofistik-tools", () => {
       const treeElement = document.createElement("div");
       treeElement.classList.add("tree-view");
       workspaceElement.appendChild(treeElement);
-      const commands = atom.commands
+      const commands = lumine.commands
         .findCommands({ target: treeElement })
         .map((command) => command.name);
       for (const name of [
@@ -129,31 +129,31 @@ describe("sofistik-tools", () => {
   describe("program toggling", () => {
     it("toggles all programs", async () => {
       const { editorElement, editor } = await openSofistikEditor("+prog aqua\n-prog ase\ntext\n");
-      atom.commands.dispatch(editorElement, "sofistik-tools:program-all-toggle");
+      lumine.commands.dispatch(editorElement, "sofistik-tools:program-all-toggle");
       expect(editor.getText()).toBe("-prog aqua\n+prog ase\ntext\n");
     });
 
     it("turns all programs on and off", async () => {
       const { editorElement, editor } = await openSofistikEditor("+prog aqua\n-prog ase\n");
-      atom.commands.dispatch(editorElement, "sofistik-tools:program-all-on");
+      lumine.commands.dispatch(editorElement, "sofistik-tools:program-all-on");
       expect(editor.getText()).toBe("+prog aqua\n+prog ase\n");
-      atom.commands.dispatch(editorElement, "sofistik-tools:program-all-off");
+      lumine.commands.dispatch(editorElement, "sofistik-tools:program-all-off");
       expect(editor.getText()).toBe("-prog aqua\n-prog ase\n");
     });
 
     it("toggles programs above and below the cursor", async () => {
       const { editorElement, editor } = await openSofistikEditor("+prog aqua\n\n+prog ase\n");
       editor.setCursorBufferPosition([1, 0]);
-      atom.commands.dispatch(editorElement, "sofistik-tools:program-above-off");
+      lumine.commands.dispatch(editorElement, "sofistik-tools:program-above-off");
       expect(editor.getText()).toBe("-prog aqua\n\n+prog ase\n");
-      atom.commands.dispatch(editorElement, "sofistik-tools:program-below-off");
+      lumine.commands.dispatch(editorElement, "sofistik-tools:program-below-off");
       expect(editor.getText()).toBe("-prog aqua\n\n-prog ase\n");
     });
 
     it("toggles the current program backwards from the cursor", async () => {
       const { editorElement, editor } = await openSofistikEditor("+prog aqua\nhead 1\n");
       editor.setCursorBufferPosition([1, 5]);
-      atom.commands.dispatch(editorElement, "sofistik-tools:program-current-toggle");
+      lumine.commands.dispatch(editorElement, "sofistik-tools:program-current-toggle");
       expect(editor.getText()).toBe("-prog aqua\nhead 1\n");
     });
 
@@ -161,7 +161,7 @@ describe("sofistik-tools", () => {
       const { editorElement, editor } = await openSofistikEditor(
         "+prog aqua urs:12.3\n-prog ase urs:4\n",
       );
-      atom.commands.dispatch(editorElement, "sofistik-tools:clear-urs-tags");
+      lumine.commands.dispatch(editorElement, "sofistik-tools:clear-urs-tags");
       expect(editor.getText()).toBe("+prog aqua\n-prog ase\n");
     });
   });
@@ -197,15 +197,15 @@ describe("sofistik-tools", () => {
       const envPath = makeTempDir();
       const sofPath = path.join(envPath, "2026", "SOFiSTiK 2026");
       fs.mkdirSync(sofPath, { recursive: true });
-      atom.config.set("sofistik-tools.envPath", envPath);
+      lumine.config.set("sofistik-tools.envPath", envPath);
       expect(mainModule.getSofPath()).toBe(sofPath);
     });
 
     it("notifies when the environment is missing", () => {
-      atom.config.set("sofistik-tools.envPath", path.join(os.tmpdir(), "no-such-sofistik"));
-      const before = atom.notifications.getNotifications().length;
+      lumine.config.set("sofistik-tools.envPath", path.join(os.tmpdir(), "no-such-sofistik"));
+      const before = lumine.notifications.getNotifications().length;
       expect(mainModule.getSofPath()).toBeUndefined();
-      const notifications = atom.notifications.getNotifications();
+      const notifications = lumine.notifications.getNotifications();
       expect(notifications.length).toBe(before + 1);
       expect(notifications[notifications.length - 1].getType()).toBe("error");
     });
@@ -217,15 +217,15 @@ describe("sofistik-tools", () => {
     beforeEach(() => {
       envPath = makeTempDir();
       fs.mkdirSync(path.join(envPath, "2026", "SOFiSTiK 2026"), { recursive: true });
-      atom.config.set("sofistik-tools.envPath", envPath);
+      lumine.config.set("sofistik-tools.envPath", envPath);
     });
 
     it("warns instead of spawning when the target file does not exist", () => {
       const dir = makeTempDir();
-      const before = atom.notifications.getNotifications().length;
+      const before = lumine.notifications.getNotifications().length;
       const result = mainModule.openAnimator(path.join(dir, "model.dat"));
       expect(result).toBeUndefined();
-      const notifications = atom.notifications.getNotifications();
+      const notifications = lumine.notifications.getNotifications();
       expect(notifications.length).toBe(before + 1);
       expect(notifications[notifications.length - 1].getType()).toBe("warning");
     });
@@ -341,7 +341,7 @@ describe("sofistik-tools", () => {
         scrollToDestination: (target, dest) => scrolls.push({ target, dest }),
         setFile: () => {},
       });
-      spyOn(atom.workspace, "open");
+      spyOn(lumine.workspace, "open");
       mainModule.getViewer("C:\\docs\\aqua.pdf", "LC", true);
       expect(scrolls).toEqual([{ target: viewer, dest: "LC" }]);
     });
@@ -358,7 +358,7 @@ describe("sofistik-tools", () => {
         scrollToDestination: () => {},
         setFile: (target, filePath, dest, tag) => swaps.push({ target, filePath, dest, tag }),
       });
-      spyOn(atom.workspace, "open");
+      spyOn(lumine.workspace, "open");
       mainModule.getViewer("C:\\docs\\aqua.pdf", "LC", true);
       expect(swaps).toEqual([
         { target: viewer, filePath: "C:\\docs\\aqua.pdf", dest: "LC", tag: "SOFiSTiK" },
@@ -383,7 +383,7 @@ describe("sofistik-tools", () => {
 
     it("falls back to a plain workspace open without the service", () => {
       const opened = [];
-      spyOn(atom.workspace, "open").and.callFake((uri) => {
+      spyOn(lumine.workspace, "open").and.callFake((uri) => {
         opened.push(uri);
         return Promise.resolve();
       });
