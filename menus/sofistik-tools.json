@@ -9,9 +9,6 @@
         "command": "sofistik-tools:current-help"
       },
       {
-        "type": "separator"
-      },
-      {
         "label": "Calculation WPS",
         "command": "sofistik-tools:calculation-wps"
       },
@@ -22,9 +19,6 @@
       {
         "label": "Calculation WPS Current",
         "command": "sofistik-tools:calculation-wps-current"
-      },
-      {
-        "type": "separator"
       },
       {
         "label": "Open Animator",
