@@ -448,6 +448,180 @@ describe("sofistik-tools", () => {
     });
   });
 
+  describe("current help", () => {
+    // Resolve the manual and the destination without opening anything. The
+    // program name arrives uppercased from the PROG line and the file name is
+    // built from it, which resolves against the lowercase manuals only because
+    // SOFiSTiK is Windows-only and its filesystem is case-insensitive — so
+    // compare on the name, not on its case.
+    function captureViewer() {
+      const calls = [];
+      spyOn(mainModule, "getViewer").and.callFake((filePath, dest, reuse) =>
+        calls.push({ fileName: path.basename(filePath).toLowerCase(), dest, reuse }),
+      );
+      return calls;
+    }
+
+    function installManuals(...names) {
+      const dir = makeTempDir();
+      for (const name of names) {
+        fs.writeFileSync(path.join(dir, name), "x");
+      }
+      spyOn(mainModule, "getSofPath").and.returnValue(dir);
+      return dir;
+    }
+
+    async function openBelowProg(prog) {
+      const { editor } = await openSofistikEditor(`+prog ${prog}\nhead one\n`);
+      editor.setCursorBufferPosition([1, 4]);
+      return editor;
+    }
+
+    it("prefers the configured language over the other one", async () => {
+      installManuals("aqua_0.pdf", "aqua_1.pdf");
+      const calls = captureViewer();
+      await openBelowProg("AQUA");
+
+      lumine.config.set("language-sofistik.language", "English");
+      mainModule.currentHelp(1);
+      expect(calls.pop().fileName).toBe("aqua_1.pdf");
+
+      lumine.config.set("language-sofistik.language", "German");
+      mainModule.currentHelp(1);
+      expect(calls.pop().fileName).toBe("aqua_0.pdf");
+    });
+
+    it("prefers an unsuffixed manual over the wrong language", async () => {
+      installManuals("beam.pdf", "beam_0.pdf");
+      const calls = captureViewer();
+      await openBelowProg("BEAM");
+      lumine.config.set("language-sofistik.language", "English");
+
+      mainModule.currentHelp(1);
+
+      expect(calls.pop().fileName).toBe("beam.pdf");
+    });
+
+    it("falls back to the other language when a manual ships in one only", async () => {
+      // `tunars_0.pdf` has no English counterpart in any installed version, and
+      // a German manual for the program is a better answer than none.
+      installManuals("tunars_0.pdf");
+      const calls = captureViewer();
+      await openBelowProg("TUNARS");
+      lumine.config.set("language-sofistik.language", "English");
+
+      mainModule.currentHelp(1);
+
+      expect(calls.pop().fileName).toBe("tunars_0.pdf");
+    });
+
+    it("resolves a manual when the language setting is absent", async () => {
+      installManuals("aqua_1.pdf");
+      const calls = captureViewer();
+      await openBelowProg("AQUA");
+      lumine.config.unset("language-sofistik.language");
+
+      mainModule.currentHelp(1);
+
+      expect(calls.pop().fileName).toBe("aqua_1.pdf");
+    });
+
+    it("names the program when no manual exists for it", async () => {
+      installManuals("aqua_1.pdf");
+      captureViewer();
+      await openBelowProg("DBINFO");
+      const before = lumine.notifications.getNotifications().length;
+
+      mainModule.currentHelp(1);
+
+      const notifications = lumine.notifications.getNotifications();
+      expect(notifications.length).toBe(before + 1);
+      expect(notifications[notifications.length - 1].getType()).toBe("warning");
+      expect(notifications[notifications.length - 1].getMessage()).toContain("DBINFO");
+    });
+
+    it("says why it refused when the cursor is above every PROG block", async () => {
+      installManuals("aqua_1.pdf");
+      const calls = captureViewer();
+      const { editor } = await openSofistikEditor("head one\n+prog aqua\n");
+      editor.setCursorBufferPosition([0, 0]);
+      const before = lumine.notifications.getNotifications().length;
+
+      mainModule.currentHelp(1);
+
+      // The command is in the application menu, which has no enabled state:
+      // doing nothing silently leaves the user with no way to tell why.
+      expect(calls.length).toBe(0);
+      const notifications = lumine.notifications.getNotifications();
+      expect(notifications.length).toBe(before + 1);
+      expect(notifications[notifications.length - 1].getType()).toBe("warning");
+    });
+  });
+
+  describe("help destinations", () => {
+    afterEach(() => {
+      mainModule.pdfViewService = null;
+      mainModule.keywordsProvider = null;
+    });
+
+    // The keyword data keys its modules the way the input file writes them —
+    // `WING`, not the `wingraf.pdf` its manual is named after.
+    function provideKeywords(keywords) {
+      mainModule.consumeSofistikKeywords({
+        provider: { withContext: () => ({ getKeywords: () => keywords }) },
+      });
+    }
+
+    async function installManualAndEditor(text, cursor) {
+      const dir = makeTempDir();
+      fs.writeFileSync(path.join(dir, "aqua_1.pdf"), "x");
+      spyOn(mainModule, "getSofPath").and.returnValue(dir);
+      lumine.config.set("language-sofistik.language", "English");
+      provideKeywords({ AQUA: { NORM: {}, MAT: {} } });
+      const { editor } = await openSofistikEditor(text);
+      editor.setCursorBufferPosition(cursor);
+      return dir;
+    }
+
+    it("opens the manual at the command nearest above the cursor", async () => {
+      await installManualAndEditor("+prog aqua\n  norm en\n  mat 1\n", [2, 6]);
+      const calls = [];
+      mainModule.consumePdfView({
+        getViewerByTag: () => null,
+        open: (filePath, options) => calls.push(options),
+        scrollToDestination: () => {},
+        setFile: () => {},
+      });
+
+      mainModule.currentHelp(1);
+
+      expect(calls.length).toBe(1);
+      expect(calls[0].dest).toBe("MAT");
+    });
+
+    it("keeps the destination when the pdf-view service is not here yet", async () => {
+      const dir = await installManualAndEditor("+prog aqua\n  mat 1\n", [1, 6]);
+      // Spy only once the editor is open — opening it goes through the very
+      // method being stubbed.
+      const opened = [];
+      spyOn(lumine.workspace, "open").and.callFake((uri) => {
+        opened.push(uri);
+        return Promise.resolve();
+      });
+
+      // pdf-view's own opener matches a `.pdf` URI with a hash on it, so the
+      // destination has to survive the trip through the workspace rather than
+      // being dropped for the service being absent.
+      mainModule.currentHelp(1);
+
+      expect(opened.length).toBe(1);
+      expect(opened[0].toLowerCase().startsWith(path.join(dir, "aqua_1.pdf").toLowerCase())).toBe(
+        true,
+      );
+      expect(opened[0].endsWith("#nameddest=MAT")).toBe(true);
+    });
+  });
+
   describe("pdf-view service integration", () => {
     afterEach(() => {
       mainModule.pdfViewService = null;
