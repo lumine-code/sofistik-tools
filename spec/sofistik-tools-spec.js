@@ -269,6 +269,146 @@ describe("sofistik-tools", () => {
       const files = await require("../lib/ripgrep").findFiles(dir, filter);
       expect(files.sort()).toEqual(["x.#a", "x.$1", "x.erg", "x.prt"]);
     });
+
+    it("keeps a path containing a newline in one piece", async () => {
+      const dir = makeTempDir();
+      // A newline is a legal character in a filename on POSIX, and splitting
+      // ripgrep's output on one would turn this into two paths that do not
+      // exist. Windows forbids it outright, so there is nothing to test there.
+      if (process.platform === "win32") return;
+      fs.writeFileSync(path.join(dir, "a\nb.gra"), "x");
+      const files = await require("../lib/ripgrep").findFiles(dir, "*.gra");
+      expect(files).toEqual(["a\nb.gra"]);
+    });
+  });
+
+  describe("manual list", () => {
+    let helpList;
+
+    // The manuals SOFiSTiK actually ships: `_0` German, `_1` English, some
+    // with no suffix at all, and some — `tunars`, `thermal_analysis` — that
+    // exist in German only, in every installed version.
+    function makeInstallation() {
+      const dir = makeTempDir();
+      for (const name of [
+        "aqua_0.pdf",
+        "aqua_1.pdf",
+        "star2_0.pdf",
+        "star2_1.pdf",
+        "beam.pdf",
+        "tunars_0.pdf",
+        "thermal_analysis_0.pdf",
+        "cdbase.chm",
+      ]) {
+        fs.writeFileSync(path.join(dir, name), "x");
+      }
+      // Manuals are the ones sitting in the installation root; the examples
+      // below it are a different list.
+      fs.mkdirSync(path.join(dir, "ase.dat"));
+      fs.writeFileSync(path.join(dir, "ase.dat", "nested_1.pdf"), "x");
+      spyOn(mainModule, "getSofPath").and.returnValue(dir);
+      return dir;
+    }
+
+    beforeEach(() => {
+      helpList = mainModule.helpList;
+    });
+
+    it("lists the manuals in the installation root, one row per manual", async () => {
+      makeInstallation();
+      lumine.config.set("language-sofistik.language", "English");
+
+      await helpList.update();
+
+      expect(helpList.items.map((item) => item.displayName)).toEqual([
+        "AQUA",
+        "BEAM",
+        "STAR2",
+        "THERMAL_ANALYSIS",
+        "TUNARS",
+      ]);
+      // The English variant where there is a choice, and the German one where
+      // it is the only manual published rather than no row at all.
+      const byName = new Map(helpList.items.map((item) => [item.displayName, item.fileName]));
+      expect(byName.get("AQUA")).toBe("aqua_1.pdf");
+      expect(byName.get("STAR2")).toBe("star2_1.pdf");
+      expect(byName.get("BEAM")).toBe("beam.pdf");
+      expect(byName.get("TUNARS")).toBe("tunars_0.pdf");
+      expect(byName.get("THERMAL_ANALYSIS")).toBe("thermal_analysis_0.pdf");
+    });
+
+    it("follows the configured language", async () => {
+      makeInstallation();
+      lumine.config.set("language-sofistik.language", "German");
+
+      await helpList.update();
+
+      const byName = new Map(helpList.items.map((item) => [item.displayName, item.fileName]));
+      expect(byName.get("AQUA")).toBe("aqua_0.pdf");
+      expect(byName.get("STAR2")).toBe("star2_0.pdf");
+      expect(byName.get("BEAM")).toBe("beam.pdf");
+    });
+
+    it("recrawls when the language changes and reuses the crawl otherwise", async () => {
+      makeInstallation();
+      lumine.config.set("language-sofistik.language", "English");
+      await helpList.update();
+      const first = helpList.items;
+
+      await helpList.update();
+      expect(helpList.items).toBe(first);
+
+      lumine.config.set("language-sofistik.language", "German");
+      await helpList.update();
+      expect(helpList.items).not.toBe(first);
+      expect(helpList.items.find((item) => item.displayName === "AQUA").fileName).toBe(
+        "aqua_0.pdf",
+      );
+    });
+
+    it("crawls nothing when the installation is missing", async () => {
+      // `getSofPath` reports the missing installation and returns nothing.
+      // Crawling anyway would spawn ripgrep with no `cwd` — the editor's own
+      // working directory — and list whatever happened to be there.
+      spyOn(mainModule, "getSofPath").and.returnValue(undefined);
+
+      await helpList.update();
+
+      expect(helpList.items).toBe(null);
+    });
+  });
+
+  describe("example list", () => {
+    it("crawls nothing when the installation is missing", async () => {
+      spyOn(mainModule, "getSofPath").and.returnValue(undefined);
+
+      await mainModule.exampleList.update();
+
+      expect(mainModule.exampleList.items).toBe(null);
+    });
+
+    it("lists the examples under each program directory for the configured language", async () => {
+      const dir = makeTempDir();
+      for (const relative of [
+        ["ase.dat", "english", "ase1_beam.dat"],
+        ["ase.dat", "deutsch", "ase1_stab.dat"],
+        ["aqua.dat", "quer.dat"],
+      ]) {
+        fs.mkdirSync(path.join(dir, ...relative.slice(0, -1)), { recursive: true });
+        fs.writeFileSync(path.join(dir, ...relative), "x");
+      }
+      spyOn(mainModule, "getSofPath").and.returnValue(dir);
+      lumine.config.set("language-sofistik.language", "English");
+
+      await mainModule.exampleList.update();
+
+      // The language directory is dropped from the title; a program that ships
+      // no language split keeps its path as it is.
+      expect(mainModule.exampleList.items.map((item) => [item.prog, item.title])).toEqual([
+        ["ase", "ase1_beam.dat"],
+        ["aqua", "quer.dat"],
+      ]);
+    });
   });
 
   describe("clean commands", () => {
