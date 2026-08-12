@@ -450,14 +450,12 @@ describe("sofistik-tools", () => {
 
   describe("current help", () => {
     // Resolve the manual and the destination without opening anything. The
-    // program name arrives uppercased from the PROG line and the file name is
-    // built from it, which resolves against the lowercase manuals only because
-    // SOFiSTiK is Windows-only and its filesystem is case-insensitive — so
-    // compare on the name, not on its case.
+    // file name is asserted exactly: every program manual is lowercase on
+    // disk, and matching it must not depend on the filesystem's case-folding.
     function captureViewer() {
       const calls = [];
       spyOn(mainModule, "getViewer").and.callFake((filePath, dest, reuse) =>
-        calls.push({ fileName: path.basename(filePath).toLowerCase(), dest, reuse }),
+        calls.push({ fileName: path.basename(filePath), dest, reuse }),
       );
       return calls;
     }
@@ -615,10 +613,7 @@ describe("sofistik-tools", () => {
       mainModule.currentHelp(1);
 
       expect(opened.length).toBe(1);
-      expect(opened[0].toLowerCase().startsWith(path.join(dir, "aqua_1.pdf").toLowerCase())).toBe(
-        true,
-      );
-      expect(opened[0].endsWith("#nameddest=MAT")).toBe(true);
+      expect(opened[0]).toBe(path.join(dir, "aqua_1.pdf") + "#nameddest=MAT");
     });
   });
 
