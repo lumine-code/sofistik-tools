@@ -27,6 +27,18 @@ describe("sofistik-tools", () => {
     });
   }
 
+  // This package owns the environment now, so the only thing to stand in for
+  // is language-sofistik's keyword service, whose whole role here is naming
+  // the release. The provider itself is the real one.
+  function useEnvironment(root, version = "2026") {
+    lumine.config.set("sofistik-tools.envPath", root);
+    mainModule.keywordsProvider = {
+      withContext: (editor, filePath, requested) => ({
+        getVersion: () => (requested && requested !== "Auto" ? String(requested) : version),
+      }),
+    };
+  }
+
   // A stand-in grammar rather than language-sofistik: the scope name is the
   // whole contract between the two packages, and the commands read it from the
   // editor now rather than from the element's data-grammar attribute.
@@ -59,6 +71,10 @@ describe("sofistik-tools", () => {
   });
 
   afterEach(() => {
+    // The package is activated once and cached, so a stand-in keyword provider
+    // and a configured root outlive the spec that set them unless cleared.
+    mainModule.keywordsProvider = null;
+    lumine.config.unset("sofistik-tools.envPath");
     for (const dir of tempDirs) {
       try {
         // Retries because Windows keeps a directory non-empty until the last handle on a
@@ -192,17 +208,67 @@ describe("sofistik-tools", () => {
     });
   });
 
+  describe("environment service", () => {
+    it("provides one sofistik.environment service", () => {
+      const service = mainModule.provideSofistikEnvironment();
+      expect(service.name).toBe("sofistik-environment");
+      expect(service.version).toBe("1.0.0");
+      expect(typeof service.provider.resolve).toBe("function");
+      // The same provider the commands here use, so a consumer can never
+      // resolve an installation differently from this package.
+      expect(mainModule.provideSofistikEnvironment().provider).toBe(service.provider);
+      expect(service.provider).toBe(mainModule.environment());
+    });
+
+    it("owns the installation folder setting", () => {
+      const root = makeTempDir();
+      useEnvironment(root);
+      expect(mainModule.environment().getRoot()).toBe(root);
+      expect(lumine.config.get("sofistik-tools.envPath")).toBe(root);
+    });
+
+    it("reports an unconfigured installation folder without inventing a path", () => {
+      useEnvironment("   ");
+      const resolved = mainModule.environment().resolve();
+      expect(resolved.root).toBe("");
+      expect(resolved.installPath).toBe("");
+      // Reported rather than thrown, so each consumer reacts in its own voice.
+      expect(resolved.installed).toBe(false);
+    });
+
+    it("resolves the release a consumer asks for over the detected one", () => {
+      const root = makeTempDir();
+      useEnvironment(root, "2026");
+      expect(mainModule.environment().resolve().version).toBe("2026");
+
+      const resolved = mainModule.environment().resolve({ version: "2022" });
+      expect(resolved.version).toBe("2022");
+      expect(resolved.installPath).toBe(path.join(root, "2022", "SOFiSTiK 2022"));
+    });
+
+    it("falls back to detection when the caller says Auto", () => {
+      useEnvironment(makeTempDir(), "2025");
+      expect(mainModule.environment().resolve({ version: "Auto" }).version).toBe("2025");
+    });
+
+    it("still names a release the caller chose when no keyword service is here", () => {
+      lumine.config.set("sofistik-tools.envPath", makeTempDir());
+      mainModule.keywordsProvider = null;
+      expect(mainModule.environment().resolve({ version: "2020" }).version).toBe("2020");
+    });
+  });
+
   describe("installation path resolution", () => {
     it("resolves an existing SOFiSTiK environment", () => {
       const envPath = makeTempDir();
       const sofPath = path.join(envPath, "2026", "SOFiSTiK 2026");
       fs.mkdirSync(sofPath, { recursive: true });
-      lumine.config.set("sofistik-tools.envPath", envPath);
+      useEnvironment(envPath);
       expect(mainModule.getSofPath()).toBe(sofPath);
     });
 
     it("notifies when the environment is missing", () => {
-      lumine.config.set("sofistik-tools.envPath", path.join(os.tmpdir(), "no-such-sofistik"));
+      useEnvironment(path.join(os.tmpdir(), "no-such-sofistik"));
       const before = lumine.notifications.getNotifications().length;
       expect(mainModule.getSofPath()).toBeUndefined();
       const notifications = lumine.notifications.getNotifications();
@@ -217,7 +283,7 @@ describe("sofistik-tools", () => {
     beforeEach(() => {
       envPath = makeTempDir();
       fs.mkdirSync(path.join(envPath, "2026", "SOFiSTiK 2026"), { recursive: true });
-      lumine.config.set("sofistik-tools.envPath", envPath);
+      useEnvironment(envPath);
     });
 
     it("warns instead of spawning when the target file does not exist", () => {

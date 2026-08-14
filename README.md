@@ -118,7 +118,9 @@ The package determines which SOFiSTiK version to use in the following priority o
 2. **Project configuration**: `sofistik.def` file in the same directory with `SOF_VERSION = 2026`
 3. **Package setting**: version configured in [language-sofistik](https://github.com/lumine-code/language-sofistik) settings
 
-The SOFiSTiK installation folder is `language-sofistik.envPath`, resolved through that package's environment service so every SOFiSTiK package agrees on one location.
+A command given an explicit version overrides all three — it runs against the release you asked for, not the one the file names.
+
+The SOFiSTiK installation folder is `sofistik-tools.envPath`. This package owns that setting and publishes it as the `sofistik.environment` service, so every SOFiSTiK package resolves one installation through one contract instead of reading another package's settings.
 
 The help view opens PDF manuals directly in Lumine using [pdf-view](https://github.com/lumine-code/pdf-view). When the cursor is on a command, it jumps to that command's documentation.
 
@@ -140,8 +142,8 @@ The examples list can be restyled from your `styles.css`, e.g.:
 
 - **tree-view.selection** (`^1.0.0`): consumed to read the selected paths for the tree-view commands (open, clean, wing-fix).
 - **open-external** (`^1.0.0`): consumed to register handlers that open SOFiSTiK file types in their native applications.
+- **[sofistik.environment](docs/sofistik.environment.md)** (`1.0.0`): provided to resolve the SOFiSTiK release a file belongs to and the folder that release is installed in.
 - **sofistik.keywords** (`^1.0.0`): consumed to resolve the SOFiSTiK version and keyword lists from language-sofistik.
-- **sofistik.environment** (`^1.0.0`): consumed to resolve the SOFiSTiK installation folder for the file being run.
 - **pdf-view** (`^1.0.0`): consumed to open and reuse PDF manual viewers with named-destination navigation.
 
 ## Contributing

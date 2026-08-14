@@ -23,6 +23,7 @@
   ],
   "main": "./lib/main",
   "files": [
+    "docs",
     "keymaps",
     "lib",
     "menus",
@@ -34,6 +35,14 @@
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
+  },
+  "providedServices": {
+    "sofistik.environment": {
+      "description": "Resolves the installed SOFiSTiK version and its installation path.",
+      "versions": {
+        "1.0.0": "provideSofistikEnvironment"
+      }
+    }
   },
   "consumedServices": {
     "tree-view.selection": {
@@ -60,7 +69,7 @@
   "configSchema": {
     "envPath": {
       "title": "SOFiSTiK installation path",
-      "description": "Path to the SOFiSTiK installation folder.",
+      "description": "Path to the SOFiSTiK installation folder holding the version directories.",
       "type": "string",
       "default": "C:\\Program Files\\SOFiSTiK"
     }
