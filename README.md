@@ -2,9 +2,7 @@
 
 Commands and integrations for SOFiSTiK structural analysis workflows.
 
-Requires [language-sofistik](https://github.com/lumine-code/language-sofistik).
-
-This package is not an official SOFiSTiK product and is not affiliated with or endorsed by SOFiSTiK AG.
+> **NOTE**: This package is not an official SOFiSTiK product and is not affiliated with or endorsed by SOFiSTiK AG.
 
 ## Features
 
@@ -17,12 +15,11 @@ This package is not an official SOFiSTiK product and is not affiliated with or e
 
 ## Installation
 
-To install `sofistik-tools` search for _sofistik-tools_ in the Install pane of the Lumine settings or run `lumine --install lumine-code/sofistik-tools`.
+To install `sofistik-tools` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/sofistik-tools`.
 
 ## Commands
 
-Commands available in `lumine-workspace`. Each acts on the active editor and
-declines with a notification when its grammar is not SOFiSTiK:
+Commands available in `lumine-workspace`. Each acts on the active editor and declines with a notification when its grammar is not SOFiSTiK:
 
 - `sofistik-tools:current-help`: open help for current module in PDF viewer (reuses pane),
 - `sofistik-tools:separately-help`: open help for current module in new pane,
@@ -110,24 +107,6 @@ Commands available in `lumine-workspace`, acting on the tree view selection:
 
 Each `clean-n` command also has a `clean-n-recursively` variant that descends into subdirectories.
 
-## Usage
-
-The package determines which SOFiSTiK version to use in the following priority order:
-
-1. **Shebang in file**: `@ SOFiSTiK 2026` or `@ SOFiSTiK 2024-05` comment in the file (searched backwards from cursor)
-2. **Project configuration**: `sofistik.def` file in the same directory with `SOF_VERSION = 2026`
-3. **Package setting**: version configured in [language-sofistik](https://github.com/lumine-code/language-sofistik) settings
-
-A command given an explicit version overrides all three — it runs against the release you asked for, not the one the file names.
-
-The SOFiSTiK installation folder is `sofistik-tools.envPath`. This package owns that setting and publishes it as the `sofistik.environment` service, so every SOFiSTiK package resolves one installation through one contract instead of reading another package's settings.
-
-The help view opens PDF manuals directly in Lumine using [pdf-view](https://github.com/lumine-code/pdf-view). When the cursor is on a command, it jumps to that command's documentation.
-
-Double-clicking SOFiSTiK file types in tree-view opens them in the appropriate application: `.cdb` in Animator, `.plb` in Report Viewer, `.gra` in WinGRAF, `.results` in Result Viewer, `.sofistik` in SSD, and `.dwg` in SOFiPLUS (if an adjacent `.dat` exists).
-
-Use the `@ child:filename.dat` directive to run multiple files in sequence, and `@ only-children` to skip the parent file itself.
-
 ## Customization
 
 The examples list can be restyled from your `styles.css`, e.g.:
@@ -140,11 +119,11 @@ The examples list can be restyled from your `styles.css`, e.g.:
 
 ## Services
 
-- **tree-view.selection** (`^1.0.0`): consumed to read the selected paths for the tree-view commands (open, clean, wing-fix).
-- **open-external** (`^1.0.0`): consumed to register handlers that open SOFiSTiK file types in their native applications.
-- **[sofistik.environment](docs/sofistik.environment.md)** (`1.0.0`): provided to resolve the SOFiSTiK release a file belongs to and the folder that release is installed in.
-- **sofistik.keywords** (`^1.0.0`): consumed to resolve the SOFiSTiK version and keyword lists from language-sofistik.
-- **pdf-view** (`^1.0.0`): consumed to open and reuse PDF manual viewers with named-destination navigation.
+- `tree-view.selection`: consumed to read the selected paths for the tree-view commands (open, clean, wing-fix).
+- `open-external`: consumed to register handlers that open SOFiSTiK file types in their native applications.
+- `sofistik.environment`: consumed to resolve the SOFiSTiK release a file belongs to, the folder that release is installed in, and the language its manuals are wanted in.
+- `sofistik.keywords`: consumed to read the module and command lists a release ships.
+- `pdf-view`: consumed to open and reuse PDF manual viewers with named-destination navigation.
 
 ## Contributing
 

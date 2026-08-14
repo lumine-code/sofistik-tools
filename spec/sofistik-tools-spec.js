@@ -27,15 +27,38 @@ describe("sofistik-tools", () => {
     });
   }
 
-  // This package owns the environment now, so the only thing to stand in for
-  // is language-sofistik's keyword service, whose whole role here is naming
-  // the release. The provider itself is the real one.
-  function useEnvironment(root, version = "2026") {
-    lumine.config.set("sofistik-tools.envPath", root);
-    mainModule.keywordsProvider = {
-      withContext: (editor, filePath, requested) => ({
-        getVersion: () => (requested && requested !== "Auto" ? String(requested) : version),
-      }),
+  // Stands in for sofistik-environment's service: the whole contract used here
+  // is a resolver naming a release, a language and where it is installed.
+  function useEnvironment(root, version = "2026", language = "en") {
+    mainModule.environmentProvider = {
+      getVersion: ({ version: asked } = {}) =>
+        asked && asked !== "Auto" ? String(asked) : version,
+      getLanguage: () => language,
+      resolve: ({ version: asked } = {}) => {
+        const release = asked && asked !== "Auto" ? String(asked) : version;
+        const installPath = root ? path.join(root, release, `SOFiSTiK ${release}`) : "";
+        return {
+          version: release,
+          language,
+          edition: "professional",
+          root,
+          installPath,
+          installed: Boolean(installPath) && fs.existsSync(installPath),
+        };
+      },
+    };
+  }
+
+  // The language comes from sofistik-environment now, not from a setting here.
+  // Layered over whatever `useEnvironment` already set, or over a bare resolver
+  // when the spec only cares about the language.
+  function useLanguage(language) {
+    if (!mainModule.environmentProvider) useEnvironment("");
+    const provider = mainModule.environmentProvider;
+    mainModule.environmentProvider = {
+      ...provider,
+      getLanguage: () => language,
+      resolve: (context) => ({ ...provider.resolve(context), language }),
     };
   }
 
@@ -71,10 +94,10 @@ describe("sofistik-tools", () => {
   });
 
   afterEach(() => {
-    // The package is activated once and cached, so a stand-in keyword provider
-    // and a configured root outlive the spec that set them unless cleared.
+    // The package is activated once and cached, so stand-in providers outlive
+    // the spec that set them unless cleared.
     mainModule.keywordsProvider = null;
-    lumine.config.unset("sofistik-tools.envPath");
+    mainModule.environmentProvider = null;
     for (const dir of tempDirs) {
       try {
         // Retries because Windows keeps a directory non-empty until the last handle on a
@@ -183,78 +206,52 @@ describe("sofistik-tools", () => {
   });
 
   describe("version resolution", () => {
-    it("defaults to 2026 without a keywords provider", () => {
-      expect(mainModule.getVersion(null, null, null)).toBe("2026");
-    });
-
-    it("prefers an explicitly requested version", () => {
+    it("has no answer of its own without the environment service", () => {
+      // This package resolves nothing: it asks, and says so when there is
+      // nobody to ask.
+      expect(mainModule.getVersion(null, null, null)).toBe("");
       expect(mainModule.getVersion("2018", null, null)).toBe("2018");
     });
 
-    it("asks the sofistik.keywords provider for the version", () => {
-      const contexts = [];
-      const disposable = mainModule.consumeSofistikKeywords({
-        provider: {
-          withContext(editor, filePath) {
-            contexts.push({ editor, filePath });
-            return { getVersion: () => "2024" };
-          },
+    it("asks the environment service, passing the file and any chosen release", () => {
+      const asked = [];
+      mainModule.environmentProvider = {
+        getVersion(context) {
+          asked.push(context);
+          return "2024";
         },
-      });
-      expect(mainModule.getVersion(null, "C:\\proj\\file.dat", null)).toBe("2024");
-      expect(contexts[0].filePath).toBe("C:\\proj\\file.dat");
+      };
+      expect(mainModule.getVersion(null, "C:/proj/file.dat", null)).toBe("2024");
+      expect(asked[0].filePath).toBe("C:/proj/file.dat");
+
+      mainModule.getVersion("2018", "C:/proj/file.dat", null);
+      expect(asked[1].version).toBe("2018");
+    });
+
+    it("drops the provider when the service goes away", () => {
+      const disposable = mainModule.consumeSofistikEnvironment({ provider: { resolve: () => {} } });
+      expect(mainModule.environmentProvider).toBeTruthy();
       disposable.dispose();
-      expect(mainModule.keywordsProvider).toBe(null);
-    });
-  });
-
-  describe("environment service", () => {
-    it("provides one sofistik.environment service", () => {
-      const service = mainModule.provideSofistikEnvironment();
-      expect(service.name).toBe("sofistik-environment");
-      expect(service.version).toBe("1.0.0");
-      expect(typeof service.provider.resolve).toBe("function");
-      // The same provider the commands here use, so a consumer can never
-      // resolve an installation differently from this package.
-      expect(mainModule.provideSofistikEnvironment().provider).toBe(service.provider);
-      expect(service.provider).toBe(mainModule.environment());
+      expect(mainModule.environmentProvider).toBe(null);
     });
 
-    it("owns the installation folder setting", () => {
+    it("notifies rather than guessing a path with no environment service", () => {
+      mainModule.environmentProvider = null;
+      const before = lumine.notifications.getNotifications().length;
+      expect(mainModule.getSofPath()).toBeUndefined();
+      const notifications = lumine.notifications.getNotifications();
+      expect(notifications.length).toBe(before + 1);
+      expect(notifications[notifications.length - 1].getType()).toBe("error");
+    });
+
+    it("resolves the install path for a release the command names", () => {
       const root = makeTempDir();
-      useEnvironment(root);
-      expect(mainModule.environment().getRoot()).toBe(root);
-      expect(lumine.config.get("sofistik-tools.envPath")).toBe(root);
-    });
-
-    it("reports an unconfigured installation folder without inventing a path", () => {
-      useEnvironment("   ");
-      const resolved = mainModule.environment().resolve();
-      expect(resolved.root).toBe("");
-      expect(resolved.installPath).toBe("");
-      // Reported rather than thrown, so each consumer reacts in its own voice.
-      expect(resolved.installed).toBe(false);
-    });
-
-    it("resolves the release a consumer asks for over the detected one", () => {
-      const root = makeTempDir();
+      const sofPath = path.join(root, "2022", "SOFiSTiK 2022");
+      fs.mkdirSync(sofPath, { recursive: true });
       useEnvironment(root, "2026");
-      expect(mainModule.environment().resolve().version).toBe("2026");
-
-      const resolved = mainModule.environment().resolve({ version: "2022" });
-      expect(resolved.version).toBe("2022");
-      expect(resolved.installPath).toBe(path.join(root, "2022", "SOFiSTiK 2022"));
-    });
-
-    it("falls back to detection when the caller says Auto", () => {
-      useEnvironment(makeTempDir(), "2025");
-      expect(mainModule.environment().resolve({ version: "Auto" }).version).toBe("2025");
-    });
-
-    it("still names a release the caller chose when no keyword service is here", () => {
-      lumine.config.set("sofistik-tools.envPath", makeTempDir());
-      mainModule.keywordsProvider = null;
-      expect(mainModule.environment().resolve({ version: "2020" }).version).toBe("2020");
+      // The service builds the path for the release asked for; there is no
+      // second path-building rule here to disagree with it.
+      expect(mainModule.getSofPath("2022")).toBe(sofPath);
     });
   });
 
@@ -382,7 +379,7 @@ describe("sofistik-tools", () => {
 
     it("lists the manuals in the installation root, one row per manual", async () => {
       makeInstallation();
-      lumine.config.set("language-sofistik.language", "English");
+      useLanguage("English");
 
       await helpList.update();
 
@@ -405,7 +402,7 @@ describe("sofistik-tools", () => {
 
     it("follows the configured language", async () => {
       makeInstallation();
-      lumine.config.set("language-sofistik.language", "German");
+      useLanguage("German");
 
       await helpList.update();
 
@@ -417,14 +414,14 @@ describe("sofistik-tools", () => {
 
     it("recrawls when the language changes and reuses the crawl otherwise", async () => {
       makeInstallation();
-      lumine.config.set("language-sofistik.language", "English");
+      useLanguage("English");
       await helpList.update();
       const first = helpList.items;
 
       await helpList.update();
       expect(helpList.items).toBe(first);
 
-      lumine.config.set("language-sofistik.language", "German");
+      useLanguage("German");
       await helpList.update();
       expect(helpList.items).not.toBe(first);
       expect(helpList.items.find((item) => item.displayName === "AQUA").fileName).toBe(
@@ -464,7 +461,7 @@ describe("sofistik-tools", () => {
         fs.writeFileSync(path.join(dir, ...relative), "x");
       }
       spyOn(mainModule, "getSofPath").and.returnValue(dir);
-      lumine.config.set("language-sofistik.language", "English");
+      useLanguage("English");
 
       await mainModule.exampleList.update();
 
@@ -546,11 +543,11 @@ describe("sofistik-tools", () => {
       const calls = captureViewer();
       await openBelowProg("AQUA");
 
-      lumine.config.set("language-sofistik.language", "English");
+      useLanguage("English");
       mainModule.currentHelp(1);
       expect(calls.pop().fileName).toBe("aqua_1.pdf");
 
-      lumine.config.set("language-sofistik.language", "German");
+      useLanguage("German");
       mainModule.currentHelp(1);
       expect(calls.pop().fileName).toBe("aqua_0.pdf");
     });
@@ -559,7 +556,7 @@ describe("sofistik-tools", () => {
       installManuals("beam.pdf", "beam_0.pdf");
       const calls = captureViewer();
       await openBelowProg("BEAM");
-      lumine.config.set("language-sofistik.language", "English");
+      useLanguage("English");
 
       mainModule.currentHelp(1);
 
@@ -572,7 +569,7 @@ describe("sofistik-tools", () => {
       installManuals("tunars_0.pdf");
       const calls = captureViewer();
       await openBelowProg("TUNARS");
-      lumine.config.set("language-sofistik.language", "English");
+      useLanguage("English");
 
       mainModule.currentHelp(1);
 
@@ -583,7 +580,7 @@ describe("sofistik-tools", () => {
       installManuals("aqua_1.pdf");
       const calls = captureViewer();
       await openBelowProg("AQUA");
-      lumine.config.unset("language-sofistik.language");
+      useLanguage(undefined);
 
       mainModule.currentHelp(1);
 
@@ -632,7 +629,7 @@ describe("sofistik-tools", () => {
     // `WING`, not the `wingraf.pdf` its manual is named after.
     function provideKeywords(keywords) {
       mainModule.consumeSofistikKeywords({
-        provider: { withContext: () => ({ getKeywords: () => keywords }) },
+        provider: { forRelease: () => ({ getKeywords: () => keywords }) },
       });
     }
 
@@ -640,7 +637,7 @@ describe("sofistik-tools", () => {
       const dir = makeTempDir();
       fs.writeFileSync(path.join(dir, "aqua_1.pdf"), "x");
       spyOn(mainModule, "getSofPath").and.returnValue(dir);
-      lumine.config.set("language-sofistik.language", "English");
+      useLanguage("English");
       provideKeywords({ AQUA: { NORM: {}, MAT: {} } });
       const { editor } = await openSofistikEditor(text);
       editor.setCursorBufferPosition(cursor);
