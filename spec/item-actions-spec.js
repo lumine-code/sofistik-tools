@@ -46,7 +46,7 @@ describe("sofistik-tools item actions", () => {
 
     const openEx = byCommand.get("sofistik-tools:open-ex");
     expect(openEx.description).toBe("Open the manual in the system PDF viewer");
-    expect(openEx.keystrokes).toEqual(["alt-enter"]);
+    expect(openEx.keystrokes).toEqual(["alt-f12"]);
 
     // Chrome and global commands stay out.
     expect(byCommand.has("core:confirm")).toBe(false);
