@@ -26,7 +26,7 @@ Commands available in `lumine-workspace`. Each acts on the active editor and dec
 - `sofistik-tools:calculation-wps`: open WPS with current file,
 - `sofistik-tools:calculation-wps-immediately`: run calculation in WPS,
 - `sofistik-tools:calculation-wps-current`: run calculation of current program only,
-- `sofistik-tools:calculation-sps-immediately`: run calculation in SPS,
+- `sofistik-tools:calculation-sps`: run calculation in SPS,
 - `sofistik-tools:open-report`: open `.plb` file in Report Viewer,
 - `sofistik-tools:save-report-as-pdf`: export report to PDF,
 - `sofistik-tools:save-pictures-as-pdf`: export pictures from report to PDF,

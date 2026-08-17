@@ -5,7 +5,7 @@
     "f5": "sofistik-tools:calculation-wps",
     "ctrl-f5": "sofistik-tools:calculation-wps-immediately",
     "shift-f5": "sofistik-tools:calculation-wps-current",
-    "alt-f5": "sofistik-tools:calculation-sps-immediately",
+    "alt-f5": "sofistik-tools:calculation-sps",
     "f6": "sofistik-tools:current-help",
     "alt-f6": "sofistik-tools:separately-help",
     "f7": "sofistik-tools:open-animator",

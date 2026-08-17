@@ -53,8 +53,8 @@
               "command": "sofistik-tools:calculation-wps-immediately"
             },
             {
-              "label": "Calculation SPS Immediately",
-              "command": "sofistik-tools:calculation-sps-immediately"
+              "label": "Calculation SPS",
+              "command": "sofistik-tools:calculation-sps"
             },
             {
               "type": "separator"
