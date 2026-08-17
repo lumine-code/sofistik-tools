@@ -38,14 +38,14 @@ describe("sofistik-tools item actions", () => {
     const openIn = byCommand.get("sofistik-tools:open-in");
     expect(openIn.name).toBe("Open In");
     expect(openIn.description).toBe(
-      "Open the manual in the editor, at the destination given after a colon in the query",
+      "Open the manual in the editor, at the destination after the colon.",
     );
     // Enter is chrome: confirming the list is the same action, so the command
     // carries no binding of its own.
     expect(openIn.keystrokes).toEqual([]);
 
     const openEx = byCommand.get("sofistik-tools:open-ex");
-    expect(openEx.description).toBe("Open the manual in the system PDF viewer");
+    expect(openEx.description).toBe("Open the manual in the system PDF viewer.");
     expect(openEx.keystrokes).toEqual(["alt-f12"]);
 
     // Chrome and global commands stay out.
