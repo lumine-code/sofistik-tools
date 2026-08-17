@@ -135,8 +135,8 @@ describe("sofistik-tools", () => {
       for (const name of [
         "sofistik-tools:ifc-export",
         "sofistik-tools:ifc-import",
-        "sofistik-tools:open-cdbase.chm",
-        "sofistik-tools:open-sof-daten",
+        "sofistik-tools:open-cdbase",
+        "sofistik-tools:open-daten",
         "sofistik-tools:toggle-help",
         "sofistik-tools:toggle-examples",
         "sofistik-tools:change-version",

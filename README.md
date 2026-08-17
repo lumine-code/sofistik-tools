@@ -69,8 +69,8 @@ Commands available in `lumine-workspace`:
 - `sofistik-tools:change-version`: change SOFiSTiK version,
 - `sofistik-tools:ifc-export`: open IFC export dialog,
 - `sofistik-tools:ifc-import`: open IFC import dialog,
-- `sofistik-tools:open-cdbase.chm`: open database description (CDBASE.CHM),
-- `sofistik-tools:open-sof-daten`: open `sofistik_daten.py` from the installation.
+- `sofistik-tools:open-cdbase`: open database description (CDBASE.CHM),
+- `sofistik-tools:open-daten`: open `sofistik_daten.py` from the installation.
 
 Commands available in `.sofistik-tools.help-list`:
 

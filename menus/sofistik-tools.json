@@ -113,11 +113,11 @@
             },
             {
               "label": "Open cdbase.chm",
-              "command": "sofistik-tools:open-cdbase.chm"
+              "command": "sofistik-tools:open-cdbase"
             },
             {
               "label": "Open sofistik_daten.py",
-              "command": "sofistik-tools:open-sof-daten"
+              "command": "sofistik-tools:open-daten"
             }
           ]
         }
