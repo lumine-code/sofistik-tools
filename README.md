@@ -21,7 +21,7 @@ To install `sofistik-tools` search for it in the Install pane of the Lumine sett
 
 Commands available in `lumine-workspace`. Each acts on the active editor and declines with a notification when its grammar is not SOFiSTiK:
 
-- `sofistik-tools:current-help`: open help for current module in PDF viewer (reuses pane),
+- `sofistik-tools:current-help`: open help for current module in PDF view (reuses pane),
 - `sofistik-tools:separately-help`: open help for current module in new pane,
 - `sofistik-tools:calculation-wps`: open WPS with current file,
 - `sofistik-tools:calculation-wps-immediately`: run calculation in WPS,
