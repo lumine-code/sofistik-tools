@@ -72,10 +72,11 @@ Commands available in `lumine-workspace`:
 - `sofistik-tools:open-cdbase`: open database description (CDBASE.CHM),
 - `sofistik-tools:open-daten`: open `sofistik_daten.py` from the installation.
 
-Commands available in `.sofistik-tools.help-list`:
+Actions shown for `.sofistik-tools.help-list`:
 
 - `sofistik-tools:open-in`: open the selected manual in the editor,
-- `sofistik-tools:open-ex`: open the selected manual in the system PDF viewer.
+- `sofistik-tools:open-ex`: open the selected manual in the system PDF viewer,
+- `sofistik-tools:cache-help`: rebuild the help cache.
 
 Commands available in `lumine-workspace`, acting on the tree view selection:
 
