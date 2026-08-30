@@ -19,7 +19,7 @@ describe("TextView window surfaces", () => {
     lumine.initializeDetachedPaneSurfaces();
   });
 
-  it("keeps its DOM, modal, and focus restoration in the owner's Document", () => {
+  it("presents its modal in primary while retaining the detached command context", () => {
     const surface = lumine.workspace.getWindowSurface(editor);
     const selected = jasmine.createSpy("selected");
     lumine.windowSurfaces.activate(surface);
@@ -28,18 +28,23 @@ describe("TextView window surfaces", () => {
 
     textView.attach(selected);
 
-    expect(textView.element.ownerDocument).toBe(surface.document);
-    expect(textView.miniEditor.element.ownerDocument).toBe(surface.document);
-    expect(textView.panel.surface).toBe(surface);
-    expect(textView.miniEditor.element.contains(surface.document.activeElement)).toBe(true);
+    expect(lumine.workspace.getActiveWindowSurface()).toBe(
+      lumine.workspace.getPrimaryWindowSurface(),
+    );
+    expect(textView.element.ownerDocument).toBe(document);
+    expect(textView.miniEditor.element.ownerDocument).toBe(document);
+    expect(textView.panel.getContainer()).toBe(lumine.workspace.panelContainers.modal);
+    expect(textView.miniEditor.element.contains(document.activeElement)).toBe(true);
 
     lumine.commands.dispatch(textView.element, "core:confirm");
 
     expect(selected).toHaveBeenCalledWith("*.cdb");
-    expect(surface.document.activeElement).toBe(editorElement);
+    expect(lumine.workspace.getActiveWindowSurface()).toBe(
+      lumine.workspace.getPrimaryWindowSurface(),
+    );
   });
 
-  it("cleans up when its surface destroys the modal panel", () => {
+  it("cleans up when its modal panel is destroyed", () => {
     const surface = lumine.workspace.getWindowSurface(editor);
     lumine.windowSurfaces.activate(surface);
     textView = new TextView("", false, false, "Pattern");
