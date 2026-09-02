@@ -18,6 +18,9 @@
   "engines": {
     "lumine": "^1.0.0"
   },
+  "specPackages": [
+    "language-sofistik"
+  ],
   "backgroundTips": [
     "You can run a SOFiSTiK calculation on the current file with {{ 'sofistik-tools:calculation-wps' | keystroke }}"
   ],

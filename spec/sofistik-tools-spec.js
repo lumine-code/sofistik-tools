@@ -62,23 +62,7 @@ describe("sofistik-tools", () => {
     };
   }
 
-  // A stand-in grammar rather than language-sofistik: the scope name is the
-  // whole contract between the two packages, and the commands read it from the
-  // editor now rather than from the element's data-grammar attribute.
-  function registerSofistikGrammar() {
-    if (lumine.grammars.grammarForScopeName("source.sofistik")) return;
-    lumine.grammars.addGrammar(
-      lumine.grammars.createGrammar("sofistik.json", {
-        name: "SOFiSTiK",
-        scopeName: "source.sofistik",
-        fileTypes: ["dat"],
-        patterns: [],
-      }),
-    );
-  }
-
   async function openSofistikEditor(text = "") {
-    registerSofistikGrammar();
     const editor = await lumine.workspace.open("model.dat");
     const editorElement = lumine.views.getView(editor);
     editor.setText(text);
@@ -89,6 +73,7 @@ describe("sofistik-tools", () => {
     tempDirs = [];
     workspaceElement = lumine.views.getView(lumine.workspace);
     jasmine.attachToDOM(workspaceElement);
+    await lumine.packages.activatePackage("language-sofistik");
     const pack = await lumine.packages.activatePackage("sofistik-tools");
     mainModule = pack.mainModule;
   });
