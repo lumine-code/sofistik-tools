@@ -26,9 +26,10 @@ describe("sofistik-tools item actions", () => {
     }
   });
 
-  it("derives its actions from the command registrations and the keymap", () => {
+  it("derives its actions from the command registrations and the keymap", async () => {
     const item = { fileName: "aqua_1.pdf", displayName: "AQUA", suffix: "" };
     helpList.items = [item];
+    await helpList.selectListHost.show();
     helpList.selectList.setItems([item]);
     const actions = helpList.selectList.getAvailableActions();
     const byCommand = new Map(actions.map((action) => [action.command, action]));
@@ -93,9 +94,9 @@ describe("sofistik-tools item actions", () => {
     fs.writeFileSync(path.join(sofDir, "aqua_1.pdf"), "");
     spyOn(mainModule, "getSofPath").and.returnValue(sofDir);
     await helpList.update();
-    helpList.selectList.show();
+    helpList.selectListHost.show();
 
-    await helpList.selectList.showActions();
+    await helpList.selectListHost.showActions();
 
     expect(lumine.workspace.getModalTrail()).toEqual(["SOFiSTiK Help", "Actions"]);
 
@@ -105,6 +106,6 @@ describe("sofistik-tools item actions", () => {
     await helpList.selectList.runAction("sofistik-tools:open-ex");
 
     expect(spy).toHaveBeenCalledWith(selected, "open-ex");
-    expect(helpList.selectList.isVisible()).toBeFalsy();
+    expect(helpList.selectListHost.isVisible()).toBeFalsy();
   });
 });
