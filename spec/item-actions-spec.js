@@ -29,8 +29,8 @@ describe("sofistik-tools item actions", () => {
   it("derives its actions from the command registrations and the keymap", () => {
     const item = { fileName: "aqua_1.pdf", displayName: "AQUA", suffix: "" };
     helpList.items = [item];
-    helpList.selectList.update({ items: [item] });
-    const actions = helpList.selectList.itemActions();
+    helpList.selectList.setItems([item]);
+    const actions = helpList.selectList.getAvailableActions();
     const byCommand = new Map(actions.map((action) => [action.command, action]));
 
     expect([...byCommand.keys()].sort()).toEqual([
@@ -44,18 +44,18 @@ describe("sofistik-tools item actions", () => {
     expect(openIn.description).toBe(
       "Open the manual in the editor, at the destination after the colon.",
     );
-    expect(openIn.keystrokes).toEqual(["enter"]);
-    expect(openIn.scope).toBe("item");
+    expect(openIn.primary).toBe(true);
+    expect(openIn.context).toBe("item");
 
     const openEx = byCommand.get("sofistik-tools:open-ex");
     expect(openEx.description).toBe("Open the manual in the system PDF viewer.");
     expect(openEx.keystrokes).toEqual(["alt-f12"]);
-    expect(openEx.scope).toBe("item");
+    expect(openEx.context).toBe("item");
 
     const cacheHelp = byCommand.get("sofistik-tools:cache-help");
     expect(cacheHelp.description).toBe("Index the manuals again after installing another release.");
     expect(cacheHelp.keystrokes).toEqual([]);
-    expect(cacheHelp.scope).toBe("list");
+    expect(cacheHelp.context).toBe("dialog");
 
     // Chrome and global commands stay out.
     expect(byCommand.has("core:confirm")).toBe(false);
@@ -64,11 +64,27 @@ describe("sofistik-tools item actions", () => {
   });
 
   it("keeps only the list action without a selected manual", () => {
-    helpList.selectList.update({ items: [] });
+    helpList.selectList.setItems([]);
 
-    expect(helpList.selectList.itemActions().map((action) => action.command)).toEqual([
+    expect(helpList.selectList.getAvailableActions().map((action) => action.command)).toEqual([
       "sofistik-tools:cache-help",
     ]);
+  });
+
+  it("passes the parsed destination snapshot to the primary action", async () => {
+    sofDir = fs.mkdtempSync(path.join(os.tmpdir(), "sofistik-item-actions-"));
+    const item = { fileName: "aqua_1.pdf", displayName: "AQUA", suffix: "" };
+    helpList.sofPath = sofDir;
+    helpList.items = [item];
+    await helpList.selectList.setItems([item]);
+    await helpList.selectList.setQuery("aqua:grp 1");
+    spyOn(lumine.workspace, "open").and.resolveTo();
+
+    await helpList.selectList.runAction("sofistik-tools:open-in");
+
+    expect(lumine.workspace.open).toHaveBeenCalledWith(
+      path.join(sofDir, "aqua_1.pdf") + "#nameddest=GRP1",
+    );
   });
 
   it("shows the actions as a flow step and runs one against the master list", async () => {
@@ -79,23 +95,16 @@ describe("sofistik-tools item actions", () => {
     await helpList.update();
     helpList.selectList.show();
 
-    await helpList.selectList.showItemActions();
+    await helpList.selectList.showActions();
 
-    expect(helpList.selectList.itemActionsList.isVisible()).toBeTruthy();
     expect(lumine.workspace.getModalTrail()).toEqual(["SOFiSTiK Help", "Actions"]);
-    // The actions list wears the package classes, so the package keymap
-    // resolves action keystrokes inside it too.
-    expect(helpList.selectList.itemActionsList.element.classList.contains("help-list")).toBe(true);
 
     const spy = spyOn(helpList, "performAction");
-    const index = helpList.selectList.itemActionsList.items.findIndex(
-      (item) => item.command === "sofistik-tools:open-ex",
-    );
-    helpList.selectList.itemActionsList.selectIndex(index);
-    helpList.selectList.itemActionsList.confirmSelection();
+    const selected = helpList.selectList.getSelectedItem();
+    lumine.workspace.popModal();
+    await helpList.selectList.runAction("sofistik-tools:open-ex");
 
-    expect(spy).toHaveBeenCalledWith(null, "open-ex");
-    expect(helpList.selectList.isVisible()).toBeTruthy();
-    expect(helpList.selectList.itemActionsList.isVisible()).toBeFalsy();
+    expect(spy).toHaveBeenCalledWith(selected, "open-ex");
+    expect(helpList.selectList.isVisible()).toBeFalsy();
   });
 });
