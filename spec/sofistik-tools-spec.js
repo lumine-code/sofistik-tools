@@ -28,12 +28,14 @@ describe("sofistik-tools", () => {
   }
 
   // Stands in for sofistik-environment's service: the whole contract used here
-  // is a resolver naming a release, a language and where it is installed.
+  // resolves a release, its language and installation, and optionally exposes
+  // the release-bound command catalogue.
   function useEnvironment(root, version = "2026", language = "en") {
     mainModule.environmentProvider = {
       getVersion: ({ version: asked } = {}) =>
         asked && asked !== "Auto" ? String(asked) : version,
       getLanguage: () => language,
+      getKeywordContext: () => null,
       resolve: ({ version: asked } = {}) => {
         const release = asked && asked !== "Auto" ? String(asked) : version;
         const installPath = root ? path.join(root, release, `SOFiSTiK ${release}`) : "";
@@ -81,7 +83,6 @@ describe("sofistik-tools", () => {
   afterEach(() => {
     // The package is activated once and cached, so stand-in providers outlive
     // the spec that set them unless cleared.
-    mainModule.keywordsProvider = null;
     mainModule.environmentProvider = null;
     for (const dir of tempDirs) {
       try {
@@ -607,15 +608,19 @@ describe("sofistik-tools", () => {
   describe("help destinations", () => {
     afterEach(() => {
       mainModule.pdfViewService = null;
-      mainModule.keywordsProvider = null;
     });
 
-    // The keyword data keys its modules the way the input file writes them —
+    // The command catalogue keys its modules the way the input file writes them —
     // `WING`, not the `wingraf.pdf` its manual is named after.
-    function provideKeywords(keywords) {
-      mainModule.consumeSofistikKeywords({
-        provider: { forRelease: () => ({ getKeywords: () => keywords }) },
-      });
+    function useKeywordContext(commandsByModule) {
+      if (!mainModule.environmentProvider) useEnvironment("");
+      const provider = mainModule.environmentProvider;
+      mainModule.environmentProvider = {
+        ...provider,
+        getKeywordContext: () => ({
+          getModuleCommands: (moduleName) => commandsByModule[moduleName] || [],
+        }),
+      };
     }
 
     async function installManualAndEditor(text, cursor) {
@@ -623,7 +628,7 @@ describe("sofistik-tools", () => {
       fs.writeFileSync(path.join(dir, "aqua_1.pdf"), "x");
       spyOn(mainModule, "getSofPath").and.returnValue(dir);
       useLanguage("English");
-      provideKeywords({ AQUA: { NORM: {}, MAT: {} } });
+      useKeywordContext({ AQUA: ["NORM", "MAT"] });
       const { editor } = await openSofistikEditor(text);
       editor.setCursorBufferPosition(cursor);
       return dir;
@@ -662,6 +667,34 @@ describe("sofistik-tools", () => {
 
       expect(opened.length).toBe(1);
       expect(opened[0]).toBe(path.join(dir, "aqua_1.pdf") + "#nameddest=MAT");
+    });
+
+    it("opens without a destination when the environment service is absent", async () => {
+      await installManualAndEditor("+prog aqua\n  mat 1\n", [1, 6]);
+      const calls = [];
+      spyOn(mainModule, "getViewer").and.callFake((filePath, dest) =>
+        calls.push({ filePath, dest }),
+      );
+      mainModule.environmentProvider = null;
+
+      expect(() => mainModule.currentHelp(1)).not.toThrow();
+
+      expect(calls.length).toBe(1);
+      expect(calls[0].dest).toBe(null);
+    });
+
+    it("opens without a destination when the environment has no keyword context", async () => {
+      await installManualAndEditor("+prog aqua\n  mat 1\n", [1, 6]);
+      const calls = [];
+      spyOn(mainModule, "getViewer").and.callFake((filePath, dest) =>
+        calls.push({ filePath, dest }),
+      );
+      mainModule.environmentProvider.getKeywordContext = () => null;
+
+      expect(() => mainModule.currentHelp(1)).not.toThrow();
+
+      expect(calls.length).toBe(1);
+      expect(calls[0].dest).toBe(null);
     });
   });
 

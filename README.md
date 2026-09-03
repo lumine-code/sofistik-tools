@@ -122,8 +122,7 @@ The examples list can be restyled from your `styles.css`, e.g.:
 
 - `tree-view.selection`: consumed to read the selected paths for the tree-view commands (open, clean, wing-fix).
 - `open-external`: consumed to register handlers that open SOFiSTiK file types in their native applications.
-- `sofistik.environment`: consumed to resolve the SOFiSTiK release a file belongs to, the folder that release is installed in, and the language its manuals are wanted in.
-- `sofistik.keywords`: consumed to read the module and command lists a release ships.
+- `sofistik.environment`: consumed to resolve the SOFiSTiK release a file belongs to, the folder that release is installed in, the language its manuals are wanted in, and the release-bound command catalogue.
 - `pdf-view`: consumed to open and reuse PDF manual viewers with named-destination navigation.
 
 ## Contributing

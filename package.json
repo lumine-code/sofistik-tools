@@ -49,11 +49,6 @@
         "^1.0.0": "consumeOpenExternal"
       }
     },
-    "sofistik.keywords": {
-      "versions": {
-        "^1.0.0": "consumeSofistikKeywords"
-      }
-    },
     "sofistik.environment": {
       "versions": {
         "^1.0.0": "consumeSofistikEnvironment"
