@@ -1,6 +1,15 @@
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
+const { pathToFileURL } = require("url");
+
+function pdfURI(filePath, destination) {
+  const uri = pathToFileURL(filePath);
+  if (destination) uri.hash = `nameddest=${destination}`;
+  return uri.href;
+}
+
+const LANGUAGE_SOFISTIK_PATH = path.join(__dirname, "..", "..", "language-sofistik");
 
 describe("sofistik-tools", () => {
   let workspaceElement, mainModule, tempDirs;
@@ -75,7 +84,7 @@ describe("sofistik-tools", () => {
     tempDirs = [];
     workspaceElement = lumine.views.getView(lumine.workspace);
     jasmine.attachToDOM(workspaceElement);
-    await lumine.packages.activatePackage("language-sofistik");
+    await lumine.packages.activatePackage(LANGUAGE_SOFISTIK_PATH);
     const pack = await lumine.packages.activatePackage("sofistik-tools");
     mainModule = pack.mainModule;
   });
@@ -154,31 +163,31 @@ describe("sofistik-tools", () => {
   describe("program toggling", () => {
     it("toggles all programs", async () => {
       const { editorElement, editor } = await openSofistikEditor("+prog aqua\n-prog ase\ntext\n");
-      lumine.commands.dispatch(editorElement, "sofistik-tools:program-all-toggle");
+      await lumine.commands.dispatch(editorElement, "sofistik-tools:program-all-toggle");
       expect(editor.getText()).toBe("-prog aqua\n+prog ase\ntext\n");
     });
 
     it("turns all programs on and off", async () => {
       const { editorElement, editor } = await openSofistikEditor("+prog aqua\n-prog ase\n");
-      lumine.commands.dispatch(editorElement, "sofistik-tools:program-all-on");
+      await lumine.commands.dispatch(editorElement, "sofistik-tools:program-all-on");
       expect(editor.getText()).toBe("+prog aqua\n+prog ase\n");
-      lumine.commands.dispatch(editorElement, "sofistik-tools:program-all-off");
+      await lumine.commands.dispatch(editorElement, "sofistik-tools:program-all-off");
       expect(editor.getText()).toBe("-prog aqua\n-prog ase\n");
     });
 
     it("toggles programs above and below the cursor", async () => {
       const { editorElement, editor } = await openSofistikEditor("+prog aqua\n\n+prog ase\n");
       editor.setCursorBufferPosition([1, 0]);
-      lumine.commands.dispatch(editorElement, "sofistik-tools:program-above-off");
+      await lumine.commands.dispatch(editorElement, "sofistik-tools:program-above-off");
       expect(editor.getText()).toBe("-prog aqua\n\n+prog ase\n");
-      lumine.commands.dispatch(editorElement, "sofistik-tools:program-below-off");
+      await lumine.commands.dispatch(editorElement, "sofistik-tools:program-below-off");
       expect(editor.getText()).toBe("-prog aqua\n\n-prog ase\n");
     });
 
     it("toggles the current program backwards from the cursor", async () => {
       const { editorElement, editor } = await openSofistikEditor("+prog aqua\nhead 1\n");
       editor.setCursorBufferPosition([1, 5]);
-      lumine.commands.dispatch(editorElement, "sofistik-tools:program-current-toggle");
+      await lumine.commands.dispatch(editorElement, "sofistik-tools:program-current-toggle");
       expect(editor.getText()).toBe("-prog aqua\nhead 1\n");
     });
 
@@ -186,7 +195,7 @@ describe("sofistik-tools", () => {
       const { editorElement, editor } = await openSofistikEditor(
         "+prog aqua urs:12.3\n-prog ase urs:4\n",
       );
-      lumine.commands.dispatch(editorElement, "sofistik-tools:clear-urs-tags");
+      await lumine.commands.dispatch(editorElement, "sofistik-tools:clear-urs-tags");
       expect(editor.getText()).toBe("+prog aqua\n-prog ase\n");
     });
   });
@@ -424,6 +433,25 @@ describe("sofistik-tools", () => {
       await helpList.update();
 
       expect(helpList.items).toBe(null);
+    });
+
+    it("requests the manual environment before the first crawl", async () => {
+      const root = makeTempDir();
+      const install = path.join(root, "2026", "SOFiSTiK 2026");
+      fs.mkdirSync(install, { recursive: true });
+      fs.writeFileSync(path.join(install, "aqua_1.pdf"), "x");
+
+      // The service is deliberately manual, so a freshly activated tools
+      // package has no provider until its first list operation asks for one.
+      const ensure = spyOn(mainModule, "ensureEnvironment").and.callFake(async () => {
+        useEnvironment(root);
+        return mainModule.environmentProvider;
+      });
+
+      await helpList.update();
+
+      expect(ensure).toHaveBeenCalled();
+      expect(helpList.items.map((item) => item.displayName)).toEqual(["AQUA"]);
     });
   });
 
@@ -666,7 +694,7 @@ describe("sofistik-tools", () => {
       mainModule.currentHelp(1);
 
       expect(opened.length).toBe(1);
-      expect(opened[0]).toBe(path.join(dir, "aqua_1.pdf") + "#nameddest=MAT");
+      expect(opened[0]).toBe(pdfURI(path.join(dir, "aqua_1.pdf"), "MAT"));
     });
 
     it("opens without a destination when the environment service is absent", async () => {
@@ -778,7 +806,7 @@ describe("sofistik-tools", () => {
         return Promise.resolve();
       });
       mainModule.getViewer("C:\\docs\\aqua.pdf", "LC", true);
-      expect(opened).toEqual(["C:\\docs\\aqua.pdf#nameddest=LC"]);
+      expect(opened).toEqual([pdfURI("C:\\docs\\aqua.pdf", "LC")]);
     });
   });
 

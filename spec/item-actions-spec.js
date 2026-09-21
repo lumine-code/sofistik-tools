@@ -1,6 +1,7 @@
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
+const { pathToFileURL } = require("url");
 
 describe("sofistik-tools item actions", () => {
   let mainModule, helpList, sofDir;
@@ -83,9 +84,9 @@ describe("sofistik-tools item actions", () => {
 
     await helpList.selectList.runAction("sofistik-tools:open-in");
 
-    expect(lumine.workspace.open).toHaveBeenCalledWith(
-      path.join(sofDir, "aqua_1.pdf") + "#nameddest=GRP1",
-    );
+    const expectedURI = pathToFileURL(path.join(sofDir, "aqua_1.pdf"));
+    expectedURI.hash = "nameddest=GRP1";
+    expect(lumine.workspace.open).toHaveBeenCalledWith(expectedURI.href);
   });
 
   it("shows the actions as a flow step and runs one against the master list", async () => {
