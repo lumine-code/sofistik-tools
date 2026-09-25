@@ -21,9 +21,6 @@
   "specPackages": [
     "language-sofistik"
   ],
-  "backgroundTips": [
-    "You can run a SOFiSTiK calculation on the current file with {{ 'sofistik-tools:calculation-wps' | keystroke }}"
-  ],
   "main": "./lib/main",
   "files": [
     "keymaps",
@@ -37,6 +34,13 @@
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
+  },
+  "providedServices": {
+    "background-tips.provider": {
+      "versions": {
+        "1.0.0": "provideBackgroundTips"
+      }
+    }
   },
   "consumedServices": {
     "tree-view.selection": {
