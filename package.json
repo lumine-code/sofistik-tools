@@ -19,7 +19,8 @@
     "lumine": "^1.0.0"
   },
   "specPackages": [
-    "language-sofistik"
+    "language-sofistik",
+    "language-text"
   ],
   "main": "./lib/main",
   "files": [

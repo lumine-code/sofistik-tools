@@ -3,8 +3,9 @@ const TextView = require("../lib/text-view");
 describe("TextView", () => {
   let textView;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jasmine.attachToDOM(lumine.workspace.getElement());
+    await lumine.packages.activatePackage("language-text");
   });
 
   afterEach(() => {
@@ -18,6 +19,7 @@ describe("TextView", () => {
     textView.attach(selected);
 
     expect(textView.miniEditor.element.contains(document.activeElement)).toBe(true);
+    expect(textView.miniEditor.getGrammar().scopeName).toBe("text.plain");
 
     lumine.commands.dispatch(textView.element, "core:confirm");
 
