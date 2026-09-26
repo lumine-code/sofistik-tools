@@ -11,6 +11,7 @@ describe("sofistik-tools item actions", () => {
     const pack = await lumine.packages.activatePackage("sofistik-tools");
     mainModule = pack.mainModule;
     helpList = mainModule.helpList;
+    helpList.ensureSelectList();
   });
 
   afterEach(async () => {
