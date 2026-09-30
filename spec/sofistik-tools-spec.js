@@ -238,6 +238,22 @@ describe("sofistik-tools", () => {
       expect(mainModule.getSofPath(null, editor.getPath(), editor)).toBeUndefined();
     });
 
+    it("uses the shared installation scan and ignores empty newer folders", () => {
+      const root = makeTempDir();
+      const projectPath = makeTempDir();
+      const installed = path.join(root, "2024", "SOFiSTiK 2024");
+      fs.mkdirSync(installed, { recursive: true });
+      fs.writeFileSync(path.join(installed, "sps.exe"), "fixture");
+      fs.mkdirSync(path.join(root, "2027", "SOFiSTiK 2027"), { recursive: true });
+      fs.writeFileSync(path.join(projectPath, "sofistik.def"), "SOF_LANGUAGE=DE\n");
+      mainModule.environmentProvider = new SofistikEnvironmentResolver({ root });
+      spyOn(mainModule, "environmentContext").and.returnValue({ projectPath });
+      expect(mainModule.getVersion()).toBe("2024");
+      expect(mainModule.getLanguage()).toBe("de");
+      expect(mainModule.getSofPath()).toBe(installed);
+      expect(mainModule.getSofPath("2027")).toBeUndefined();
+    });
+
     it("resolves the install path for a release the command names", () => {
       const root = makeTempDir();
       const sofPath = path.join(root, "2022", "SOFiSTiK 2022");
