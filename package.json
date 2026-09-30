@@ -37,6 +37,15 @@
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
+  "configSchema": {
+    "inlineActions": {
+      "title": "Inline Run Actions",
+      "description": "Show a Run link above each active +PROG header. Requires the code-lens package. Can also be changed in scoped language settings.",
+      "type": "boolean",
+      "scopeResolution": "grammar",
+      "default": true
+    }
+  },
   "providedServices": {
     "code-lens.provider": {
       "versions": {

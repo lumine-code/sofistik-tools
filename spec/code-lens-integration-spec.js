@@ -69,6 +69,8 @@ describe("SOFiSTiK Run links in the code-lens frontend", () => {
     frontend = (await lumine.packages.activatePackage(companionPath("code-lens"))).mainModule;
     lumine.config.set("code-lens.enabled", true);
     tools = (await lumine.packages.activatePackage(PACKAGE_ROOT)).mainModule;
+    lumine.config.unset("sofistik-tools.inlineActions");
+    lumine.config.unset("sofistik-tools.inlineActions", { scopeSelector: ".source.sofistik" });
     stubNativeLaunch();
 
     filePath = path.join(directory, "model.dat");
@@ -88,6 +90,8 @@ describe("SOFiSTiK Run links in the code-lens frontend", () => {
     for (const name of ["sofistik-tools", "code-lens"])
       if (lumine.packages.isPackageLoaded(name)) await lumine.packages.unloadPackage(name);
     lumine.config.unset("code-lens.enabled");
+    lumine.config.unset("sofistik-tools.inlineActions");
+    lumine.config.unset("sofistik-tools.inlineActions", { scopeSelector: ".source.sofistik" });
     if (path.dirname(directory) !== os.tmpdir()) throw new Error("Unexpected fixture directory");
     fs.rmSync(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
   });
@@ -105,6 +109,38 @@ describe("SOFiSTiK Run links in the code-lens frontend", () => {
       expect(link(row).classList.contains("code-lens-inert")).toBe(false);
       expect(editor.getElement().contains(link(row))).toBe(true);
     }
+    expect(processSpy).not.toHaveBeenCalled();
+  });
+
+  it("removes and restores Run links when the package setting changes without editing the source", async () => {
+    const staleLink = link(1);
+    lumine.config.set("sofistik-tools.inlineActions", false);
+    click(staleLink);
+    await waitFor(() => rows().length === 0, "disabled Run links to disappear");
+    expect(editor.getElement().querySelectorAll(".code-lens").length).toBe(0);
+    expect(runSpy).not.toHaveBeenCalled();
+    expect(processSpy).not.toHaveBeenCalled();
+
+    lumine.config.set("sofistik-tools.inlineActions", true);
+    await waitFor(() => rows().join(",") === "1,6", "Run links to return after enabling");
+    expect(editor.getText()).toBe(SOURCE);
+    expect(processSpy).not.toHaveBeenCalled();
+  });
+
+  it("refreshes Run links for scoped-only settings and gives them precedence over the global value", async () => {
+    lumine.config.set("sofistik-tools.inlineActions", false);
+    await waitFor(() => rows().length === 0, "globally disabled Run links");
+    lumine.config.set("sofistik-tools.inlineActions", true, { scopeSelector: ".source.sofistik" });
+    await waitFor(() => rows().join(",") === "1,6", "scoped enabled Run links");
+    expect(lumine.config.get("sofistik-tools.inlineActions")).toBe(false);
+
+    lumine.config.set("sofistik-tools.inlineActions", false, { scopeSelector: ".source.sofistik" });
+    await waitFor(() => rows().length === 0, "scoped disabled Run links");
+    lumine.config.set("sofistik-tools.inlineActions", true);
+    await waitFor(() => rows().length === 0, "Run links still disabled by the scoped setting");
+    lumine.config.unset("sofistik-tools.inlineActions", { scopeSelector: ".source.sofistik" });
+    await waitFor(() => rows().join(",") === "1,6", "Run links inheriting the global value again");
+    expect(editor.getText()).toBe(SOURCE);
     expect(processSpy).not.toHaveBeenCalled();
   });
 

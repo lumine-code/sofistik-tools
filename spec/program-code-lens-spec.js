@@ -31,6 +31,8 @@ describe("SOFiSTiK program code lenses", () => {
     jasmine.attachToDOM(lumine.workspace.getElement());
     await lumine.packages.activatePackage(path.join(__dirname, "..", "..", "language-sofistik"));
     main = (await lumine.packages.activatePackage("sofistik-tools")).mainModule;
+    lumine.config.unset("sofistik-tools.inlineActions");
+    lumine.config.unset("sofistik-tools.inlineActions", { scopeSelector: ".source.sofistik" });
     provider = main.provideCodeLens();
     launch = spyOn(main, "createCalculationProcess").and.stub();
     spyOn(main, "getSofPath").and.returnValue(directory);
@@ -40,6 +42,8 @@ describe("SOFiSTiK program code lenses", () => {
   afterEach(async () => {
     for (const editor of editors) editor.destroy();
     await lumine.packages.deactivatePackage("sofistik-tools");
+    lumine.config.unset("sofistik-tools.inlineActions");
+    lumine.config.unset("sofistik-tools.inlineActions", { scopeSelector: ".source.sofistik" });
     fs.rmSync(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
   });
 
@@ -86,6 +90,65 @@ describe("SOFiSTiK program code lenses", () => {
     editor.isMini.and.returnValue(false);
     spyOn(editor, "getGrammar").and.returnValue({ scopeName: "text.plain" });
     expect(await provider.codeLenses(editor)).toBeNull();
+  });
+
+  it("honours global and scoped settings and refuses previously displayed actions when disabled", async () => {
+    const editor = await openEditor("+PROG AQUA\nEND\n");
+    const lens = (await provider.codeLenses(editor))[0];
+    const save = spyOn(editor, "save").and.callThrough();
+    lumine.config.set("sofistik-tools.inlineActions", false);
+    expect(await provider.codeLenses(editor)).toBeNull();
+    await lens.execute();
+    expect(save).not.toHaveBeenCalled();
+    expect(launch).not.toHaveBeenCalled();
+
+    lumine.config.set("sofistik-tools.inlineActions", true, { scopeSelector: ".source.sofistik" });
+    expect((await provider.codeLenses(editor)).length).toBe(1);
+    lumine.config.set("sofistik-tools.inlineActions", false, { scopeSelector: ".source.sofistik" });
+    lumine.config.set("sofistik-tools.inlineActions", true);
+    expect(await provider.codeLenses(editor)).toBeNull();
+  });
+
+  it("drops a pending lens fetch if the setting is disabled while the parser settles", async () => {
+    const editor = await openEditor("+PROG AQUA\nEND\n");
+    let finishParsing;
+    spyOn(editor.getBuffer().getLanguageMode(), "atTransactionEnd").and.returnValue(
+      new Promise((resolve) => {
+        finishParsing = resolve;
+      }),
+    );
+    const fetching = provider.codeLenses(editor);
+    await Promise.resolve();
+    lumine.config.set("sofistik-tools.inlineActions", false);
+    finishParsing();
+    expect(await fetching).toBeNull();
+    expect(launch).not.toHaveBeenCalled();
+  });
+
+  it("keeps old actions invalid after toggling off and on and allows newly fetched actions", async () => {
+    const editor = await openEditor("+PROG AQUA\nEND\n");
+    const lens = (await provider.codeLenses(editor))[0];
+    const save = spyOn(editor, "save").and.callThrough();
+    lumine.config.set("sofistik-tools.inlineActions", false);
+    lumine.config.set("sofistik-tools.inlineActions", true);
+    await lens.execute();
+    expect(save).not.toHaveBeenCalled();
+    expect(launch).not.toHaveBeenCalled();
+    await (await provider.codeLenses(editor))[0].execute();
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(launch).toHaveBeenCalledTimes(1);
+  });
+
+  it("invalidates for scoped configuration changes and stops notifying after deactivation", async () => {
+    const invalidated = jasmine.createSpy("invalidated");
+    const subscription = provider.onDidInvalidate(invalidated);
+    lumine.config.set("sofistik-tools.inlineActions", false, { scopeSelector: ".source.sofistik" });
+    expect(invalidated).toHaveBeenCalledTimes(1);
+    await lumine.packages.deactivatePackage("sofistik-tools");
+    lumine.config.set("sofistik-tools.inlineActions", true, { scopeSelector: ".source.sofistik" });
+    expect(invalidated).toHaveBeenCalledTimes(1);
+    expect(await provider.codeLenses(await openEditor("+PROG AQUA\nEND\n"))).toBeNull();
+    subscription.dispose();
   });
 
   it("tracks macro markers after semicolons and closes inline and prose text boundaries", async () => {
@@ -219,6 +282,41 @@ describe("SOFiSTiK program code lenses", () => {
     expect(launch).not.toHaveBeenCalled();
     await lens.execute();
     expect(launch).not.toHaveBeenCalled();
+  });
+
+  it("never launches if inline actions are disabled for this grammar during save", async () => {
+    const editor = await openEditor("+PROG AQUA\nEND\n");
+    const lens = (await provider.codeLenses(editor))[0];
+    let finishSave;
+    spyOn(editor, "save").and.returnValue(
+      new Promise((resolve) => {
+        finishSave = resolve;
+      }),
+    );
+    const running = lens.execute();
+    lumine.config.set("sofistik-tools.inlineActions", false, { scopeSelector: ".source.sofistik" });
+    finishSave();
+    await running;
+    expect(launch).not.toHaveBeenCalled();
+    expect(main.getSofPath).not.toHaveBeenCalled();
+  });
+
+  it("keeps a pending Run cancelled after toggling off and back on during save", async () => {
+    const editor = await openEditor("+PROG AQUA\nEND\n");
+    const lens = (await provider.codeLenses(editor))[0];
+    let finishSave;
+    spyOn(editor, "save").and.returnValue(
+      new Promise((resolve) => {
+        finishSave = resolve;
+      }),
+    );
+    const running = lens.execute();
+    lumine.config.set("sofistik-tools.inlineActions", false);
+    lumine.config.set("sofistik-tools.inlineActions", true);
+    finishSave();
+    await running;
+    expect(launch).not.toHaveBeenCalled();
+    expect(main.getSofPath).not.toHaveBeenCalled();
   });
 
   it("propagates a failed save without launching", async () => {
