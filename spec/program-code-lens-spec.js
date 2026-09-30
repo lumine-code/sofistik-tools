@@ -129,6 +129,34 @@ describe("SOFiSTiK program code lenses", () => {
     ]);
   });
 
+  it("treats $$ after a closing quote as continuation with or without a separating space", async () => {
+    const text = [
+      "+PROG TEMPLATE",
+      "HEAD 'title'$$ comment",
+      "+PROG ASE",
+      "END",
+      "HEAD 'title' $$ comment",
+      "+PROG AQB",
+      "END",
+    ].join("\n");
+    const editor = await openEditor(text);
+    expect((await provider.codeLenses(editor)).map((lens) => lens.range[0][0])).toEqual([0]);
+  });
+
+  it("keeps a quoted TEXT close and prose DEFINE inside the text block", async () => {
+    const text = [
+      "+PROG TEMPLATE",
+      "<TEXT>",
+      "'</TEXT>'",
+      "#DEFINE fake",
+      "</TEXT>",
+      "+PROG ASE",
+      "END",
+    ].join("\n");
+    const editor = await openEditor(text);
+    expect((await provider.codeLenses(editor)).map((lens) => lens.range[0][0])).toEqual([0, 5]);
+  });
+
   it("awaits save and runs the clicked editor and row without moving its cursor", async () => {
     const editor = await openEditor("! title\n+PROG AQUA\nEND\n+PROG ASE\nEND\n");
     editor.setCursorBufferPosition([3, 5]);
