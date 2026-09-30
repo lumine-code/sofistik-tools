@@ -2,6 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const os = require("os");
 const { pathToFileURL } = require("url");
+const { SofistikEnvironmentResolver } = require("@lumine-code/sofistik-data");
 
 function pdfURI(filePath, destination) {
   const uri = pathToFileURL(filePath);
@@ -36,14 +37,9 @@ describe("sofistik-tools", () => {
     });
   }
 
-  // Stands in for sofistik-environment's service: the whole contract used here
-  // resolves a release, its language and installation, and optionally exposes
-  // the release-bound command catalogue.
+  // Stand-in for the direct library resolver used by native launch tests.
   function useEnvironment(root, version = "2026", language = "en") {
     mainModule.environmentProvider = {
-      getVersion: ({ version: asked } = {}) =>
-        asked && asked !== "Auto" ? String(asked) : version,
-      getLanguage: () => language,
       getKeywordContext: () => null,
       resolve: ({ version: asked } = {}) => {
         const release = asked && asked !== "Auto" ? String(asked) : version;
@@ -60,15 +56,12 @@ describe("sofistik-tools", () => {
     };
   }
 
-  // The language comes from sofistik-environment now, not from a setting here.
-  // Layered over whatever `useEnvironment` already set, or over a bare resolver
-  // when the spec only cares about the language.
+  // Layer a language over the resolver selected by this test.
   function useLanguage(language) {
     if (!mainModule.environmentProvider) useEnvironment("");
     const provider = mainModule.environmentProvider;
     mainModule.environmentProvider = {
       ...provider,
-      getLanguage: () => language,
       resolve: (context) => ({ ...provider.resolve(context), language }),
     };
   }
@@ -201,42 +194,48 @@ describe("sofistik-tools", () => {
   });
 
   describe("version resolution", () => {
-    it("has no answer of its own without the environment service", () => {
-      // This package resolves nothing: it asks, and says so when there is
-      // nobody to ask.
-      expect(mainModule.getVersion(null, null, null)).toBe("");
-      expect(mainModule.getVersion("2018", null, null)).toBe("2018");
+    it("creates its own resolver without requesting an environment service", () => {
+      const request = spyOn(lumine.packages, "requestService");
+      mainModule.environmentProvider = null;
+      const resolver = mainModule.ensureEnvironment();
+      expect(typeof resolver.resolve).toBe("function");
+      expect(mainModule.ensureEnvironment()).toBe(resolver);
+      expect(request).not.toHaveBeenCalled();
+      expect(mainModule.consumeSofistikEnvironment).toBeUndefined();
     });
 
-    it("asks the environment service, passing the file and any chosen release", () => {
+    it("passes the requested file, its root and any chosen release to the library", () => {
       const asked = [];
       mainModule.environmentProvider = {
-        getVersion(context) {
+        resolve(context) {
           asked.push(context);
-          return "2024";
+          return { version: context.version || "2024" };
         },
       };
       expect(mainModule.getVersion(null, "C:/proj/file.dat", null)).toBe("2024");
-      expect(asked[0].filePath).toBe("C:/proj/file.dat");
+      expect(asked[0].filePath).toBe(path.resolve("C:/proj/file.dat"));
+      expect(asked[0].projectPath).toBeTruthy();
+      expect(asked[0].editor).toBeUndefined();
 
       mainModule.getVersion("2018", "C:/proj/file.dat", null);
       expect(asked[1].version).toBe("2018");
     });
 
-    it("drops the provider when the service goes away", () => {
-      const disposable = mainModule.consumeSofistikEnvironment({ provider: { resolve: () => {} } });
-      expect(mainModule.environmentProvider).toBeTruthy();
-      disposable.dispose();
-      expect(mainModule.environmentProvider).toBe(null);
-    });
-
-    it("notifies rather than guessing a path with no environment service", () => {
-      mainModule.environmentProvider = null;
-      const before = lumine.notifications.getNotifications().length;
-      expect(mainModule.getSofPath()).toBeUndefined();
-      const notifications = lumine.notifications.getNotifications();
-      expect(notifications.length).toBe(before + 1);
-      expect(notifications[notifications.length - 1].getType()).toBe("error");
+    it("ignores file headers and preserves an unavailable declared project year", async () => {
+      const { editor } = await openSofistikEditor("@ SOFiSTiK 2022 DE\n+prog aqua\n");
+      const projectPath = makeTempDir();
+      fs.writeFileSync(
+        path.join(projectPath, "sofistik.def"),
+        "SOF_VERSION = 2026\nSOF_LANGUAGE = EN\n",
+      );
+      mainModule.environmentProvider = new SofistikEnvironmentResolver({ root: makeTempDir() });
+      spyOn(mainModule, "environmentContext").and.returnValue({
+        projectPath,
+        filePath: editor.getPath(),
+      });
+      expect(mainModule.getVersion("Auto", editor.getPath(), editor)).toBe("2026");
+      expect(mainModule.getLanguage(editor.getPath(), editor)).toBe("en");
+      expect(mainModule.getSofPath(null, editor.getPath(), editor)).toBeUndefined();
     });
 
     it("resolves the install path for a release the command names", () => {
@@ -247,6 +246,37 @@ describe("sofistik-tools", () => {
       // The service builds the path for the release asked for; there is no
       // second path-building rule here to disagree with it.
       expect(mainModule.getSofPath("2022")).toBe(sofPath);
+    });
+
+    it("updates only the project year and preserves other declarations", () => {
+      const projectPath = makeTempDir();
+      const definition = path.join(projectPath, "sofistik.def");
+      fs.writeFileSync(
+        definition,
+        "SOF_LANGUAGE = DE\r\nSOF_VERSION = 2022\r\nSOF_EDITION = educational\r\nOTHER = value\r\n",
+      );
+      spyOn(mainModule, "environmentContext").and.returnValue({ projectPath });
+      mainModule.setVersion("2024");
+      expect(fs.readFileSync(definition, "utf8")).toBe(
+        "SOF_LANGUAGE = DE\r\nSOF_EDITION = educational\r\nOTHER = value\r\nSOF_VERSION = 2024\r\n",
+      );
+      mainModule.setVersion("Auto");
+      expect(fs.readFileSync(definition, "utf8")).toBe(
+        "SOF_LANGUAGE = DE\r\nSOF_EDITION = educational\r\nOTHER = value\r\n",
+      );
+    });
+
+    it("preserves a UTF-8 BOM without leaving the old first declaration active", () => {
+      const projectPath = makeTempDir();
+      const definition = path.join(projectPath, "sofistik.def");
+      fs.writeFileSync(definition, "\uFEFFSOF_VERSION = 2022\nSOF_EDITION = educational\n");
+      spyOn(mainModule, "environmentContext").and.returnValue({ projectPath });
+      mainModule.setVersion("2024");
+      expect(fs.readFileSync(definition, "utf8")).toBe(
+        "\uFEFFSOF_EDITION = educational\nSOF_VERSION = 2024\n",
+      );
+      const resolver = new SofistikEnvironmentResolver({ root: makeTempDir() });
+      expect(resolver.resolve({ projectPath }).version).toBe("2024");
     });
   });
 
@@ -678,6 +708,20 @@ describe("sofistik-tools", () => {
       expect(calls[0].dest).toBe("MAT");
     });
 
+    it("requests manual keyword data for the same project year as the installation", async () => {
+      await installManualAndEditor("@ SOFiSTiK 2022\n+prog aqua\nmat 1\n", [2, 5]);
+      const getKeywordContext = jasmine.createSpy("getKeywordContext").and.returnValue({
+        getModuleCommands: () => ["MAT"],
+      });
+      mainModule.environmentProvider.getKeywordContext = getKeywordContext;
+      spyOn(mainModule, "getViewer");
+      mainModule.currentHelp(1);
+      const editor = lumine.workspace.getActiveTextEditor();
+      expect(getKeywordContext).toHaveBeenCalledWith(
+        mainModule.environmentContext(editor.getPath(), editor),
+      );
+    });
+
     it("keeps the destination when the pdf-view service is not here yet", async () => {
       const dir = await installManualAndEditor("+prog aqua\n  mat 1\n", [1, 6]);
       // Spy only once the editor is open — opening it goes through the very
@@ -697,13 +741,13 @@ describe("sofistik-tools", () => {
       expect(opened[0]).toBe(pdfURI(path.join(dir, "aqua_1.pdf"), "MAT"));
     });
 
-    it("opens without a destination when the environment service is absent", async () => {
+    it("opens without a destination when the resolver exposes no keyword data", async () => {
       await installManualAndEditor("+prog aqua\n  mat 1\n", [1, 6]);
       const calls = [];
       spyOn(mainModule, "getViewer").and.callFake((filePath, dest) =>
         calls.push({ filePath, dest }),
       );
-      mainModule.environmentProvider = null;
+      mainModule.environmentProvider = { resolve: () => ({ version: "2026", language: "en" }) };
 
       expect(() => mainModule.currentHelp(1)).not.toThrow();
 

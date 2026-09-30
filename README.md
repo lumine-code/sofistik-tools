@@ -122,8 +122,9 @@ The examples list can be restyled from your `styles.css`, e.g.:
 
 - `tree-view.selection`: consumed to read the selected paths for the tree-view commands (open, clean, wing-fix).
 - `open-external`: consumed to register handlers that open SOFiSTiK file types in their native applications.
-- `sofistik.environment`: consumed to resolve the SOFiSTiK release a file belongs to, the folder that release is installed in, the language its manuals are wanted in, and the release-bound command catalogue.
 - `pdf-view`: consumed to open and reuse PDF manual viewers with named-destination navigation.
+
+Application launches and manual keyword lookups use `SofistikEnvironmentResolver` from `@lumine-code/sofistik-data` directly, without an environment package or settings. The root `sofistik.def` declares `SOF_VERSION`, `SOF_LANGUAGE` (`EN` or `DE`) and `SOF_EDITION` (`professional` or `educational`). A file outside the workspace uses its adjacent definition. Without a declared year, the newest installed release under `C:\Program Files\SOFiSTiK` applies, then the newest bundled dataset. Headers never select a year or language. English and Professional are the defaults. If the exact selected release is not installed, the command reports it instead of launching another one. Commands explicitly naming an application release still honour it. The version picker writes `SOF_VERSION` to the active project definition; `Auto` removes that declaration while preserving other fields.
 
 ## Contributing
 
