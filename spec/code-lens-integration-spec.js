@@ -1,6 +1,7 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const { SofistikEnvironmentResolver } = require("@lumine-code/sofistik-data");
 
 const PACKAGE_ROOT = path.resolve(__dirname, "..");
 const SOURCE = [
@@ -167,5 +168,46 @@ describe("SOFiSTiK Run links in the code-lens frontend", () => {
     await waitFor(() => rows().join(",") === "1,6", "the fresh provider's links");
     expect(frontend.manager.registry.providers).toContain(tools.provideCodeLens());
     expect(processSpy).not.toHaveBeenCalled();
+  });
+
+  it("launches the clicked source's adjacent release while another directory has focus", async () => {
+    const projectPath = path.join(directory, "project");
+    const sourceDirectory = path.join(projectPath, "models");
+    const otherDirectory = path.join(projectPath, "other");
+    const installationRoot = path.join(directory, "installed");
+    fs.mkdirSync(sourceDirectory, { recursive: true });
+    fs.mkdirSync(otherDirectory);
+    fs.writeFileSync(path.join(projectPath, "sofistik.def"), "SOF_VERSION=2024\n");
+    fs.writeFileSync(path.join(sourceDirectory, "sofistik.def"), "SOF_VERSION=2026\n");
+    fs.writeFileSync(path.join(otherDirectory, "sofistik.def"), "SOF_VERSION=2024\n");
+    for (const version of ["2024", "2026"]) {
+      const installPath = path.join(installationRoot, version, `SOFiSTiK ${version}`);
+      fs.mkdirSync(installPath, { recursive: true });
+      fs.writeFileSync(path.join(installPath, "wps.exe"), "");
+    }
+    tools.getSofPath.and.callThrough();
+    tools.environmentProvider = new SofistikEnvironmentResolver({ root: installationRoot });
+    const previousPaths = lumine.project.getPaths();
+    lumine.project.setPaths([projectPath]);
+    try {
+      filePath = path.join(sourceDirectory, "model.dat");
+      fs.writeFileSync(filePath, SOURCE);
+      editor = await lumine.workspace.open(filePath);
+      editors.push(editor);
+      await waitFor(() => rows().join(",") === "1,6", "nested source Run links");
+      const otherPath = path.join(otherDirectory, "other.dat");
+      fs.writeFileSync(otherPath, "+PROG AQUA\nEND\n");
+      const other = await lumine.workspace.open(otherPath);
+      editors.push(other);
+      click(link(1));
+      await waitFor(() => runSpy.calls.count() === 1, "nested source Run action");
+      await runSpy.calls.mostRecent().returnValue;
+      expect(processSpy.calls.mostRecent().args[0].command).toBe(
+        path.join(installationRoot, "2026", "SOFiSTiK 2026", "wps.exe"),
+      );
+      expect(lumine.workspace.getActiveTextEditor()).toBe(other);
+    } finally {
+      lumine.project.setPaths(previousPaths);
+    }
   });
 });

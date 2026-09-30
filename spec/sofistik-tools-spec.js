@@ -204,7 +204,7 @@ describe("sofistik-tools", () => {
       expect(mainModule.consumeSofistikEnvironment).toBeUndefined();
     });
 
-    it("passes the requested file, its root and any chosen release to the library", () => {
+    it("passes the requested file and any chosen release without a workspace root", () => {
       const asked = [];
       mainModule.environmentProvider = {
         resolve(context) {
@@ -214,25 +214,23 @@ describe("sofistik-tools", () => {
       };
       expect(mainModule.getVersion(null, "C:/proj/file.dat", null)).toBe("2024");
       expect(asked[0].filePath).toBe(path.resolve("C:/proj/file.dat"));
-      expect(asked[0].projectPath).toBeTruthy();
+      expect(asked[0].projectPath).toBeUndefined();
       expect(asked[0].editor).toBeUndefined();
 
       mainModule.getVersion("2018", "C:/proj/file.dat", null);
       expect(asked[1].version).toBe("2018");
     });
 
-    it("ignores file headers and preserves an unavailable declared project year", async () => {
-      const { editor } = await openSofistikEditor("@ SOFiSTiK 2022 DE\n+prog aqua\n");
+    it("ignores file headers and preserves an unavailable adjacent year", async () => {
       const projectPath = makeTempDir();
+      const filePath = path.join(projectPath, "model.dat");
+      fs.writeFileSync(filePath, "@ SOFiSTiK 2022 DE\n+prog aqua\n");
+      const editor = await lumine.workspace.open(filePath);
       fs.writeFileSync(
         path.join(projectPath, "sofistik.def"),
         "SOF_VERSION = 2026\nSOF_LANGUAGE = EN\n",
       );
       mainModule.environmentProvider = new SofistikEnvironmentResolver({ root: makeTempDir() });
-      spyOn(mainModule, "environmentContext").and.returnValue({
-        projectPath,
-        filePath: editor.getPath(),
-      });
       expect(mainModule.getVersion("Auto", editor.getPath(), editor)).toBe("2026");
       expect(mainModule.getLanguage(editor.getPath(), editor)).toBe("en");
       expect(mainModule.getSofPath(null, editor.getPath(), editor)).toBeUndefined();
@@ -247,11 +245,11 @@ describe("sofistik-tools", () => {
       fs.mkdirSync(path.join(root, "2027", "SOFiSTiK 2027"), { recursive: true });
       fs.writeFileSync(path.join(projectPath, "sofistik.def"), "SOF_LANGUAGE=DE\n");
       mainModule.environmentProvider = new SofistikEnvironmentResolver({ root });
-      spyOn(mainModule, "environmentContext").and.returnValue({ projectPath });
-      expect(mainModule.getVersion()).toBe("2024");
-      expect(mainModule.getLanguage()).toBe("de");
-      expect(mainModule.getSofPath()).toBe(installed);
-      expect(mainModule.getSofPath("2027")).toBeUndefined();
+      const filePath = path.join(projectPath, "model.dat");
+      expect(mainModule.getVersion(null, filePath)).toBe("2024");
+      expect(mainModule.getLanguage(filePath)).toBe("de");
+      expect(mainModule.getSofPath(null, filePath)).toBe(installed);
+      expect(mainModule.getSofPath("2027", filePath)).toBeUndefined();
     });
 
     it("resolves the install path for a release the command names", () => {
@@ -264,19 +262,19 @@ describe("sofistik-tools", () => {
       expect(mainModule.getSofPath("2022")).toBe(sofPath);
     });
 
-    it("updates only the project year and preserves other declarations", () => {
+    it("updates only the adjacent year and preserves other declarations", () => {
       const projectPath = makeTempDir();
       const definition = path.join(projectPath, "sofistik.def");
       fs.writeFileSync(
         definition,
         "SOF_LANGUAGE = DE\r\nSOF_VERSION = 2022\r\nSOF_EDITION = educational\r\nOTHER = value\r\n",
       );
-      spyOn(mainModule, "environmentContext").and.returnValue({ projectPath });
-      mainModule.setVersion("2024");
+      const filePath = path.join(projectPath, "model.dat");
+      mainModule.setVersion("2024", filePath);
       expect(fs.readFileSync(definition, "utf8")).toBe(
         "SOF_LANGUAGE = DE\r\nSOF_EDITION = educational\r\nOTHER = value\r\nSOF_VERSION = 2024\r\n",
       );
-      mainModule.setVersion("Auto");
+      mainModule.setVersion("Auto", filePath);
       expect(fs.readFileSync(definition, "utf8")).toBe(
         "SOF_LANGUAGE = DE\r\nSOF_EDITION = educational\r\nOTHER = value\r\n",
       );
@@ -286,13 +284,132 @@ describe("sofistik-tools", () => {
       const projectPath = makeTempDir();
       const definition = path.join(projectPath, "sofistik.def");
       fs.writeFileSync(definition, "\uFEFFSOF_VERSION = 2022\nSOF_EDITION = educational\n");
-      spyOn(mainModule, "environmentContext").and.returnValue({ projectPath });
-      mainModule.setVersion("2024");
+      const filePath = path.join(projectPath, "model.dat");
+      mainModule.setVersion("2024", filePath);
       expect(fs.readFileSync(definition, "utf8")).toBe(
         "\uFEFFSOF_EDITION = educational\nSOF_VERSION = 2024\n",
       );
       const resolver = new SofistikEnvironmentResolver({ root: makeTempDir() });
-      expect(resolver.resolve({ projectPath }).version).toBe("2024");
+      expect(resolver.resolve({ filePath }).version).toBe("2024");
+    });
+
+    it("uses only the definition beside a nested source and never inherits its root", () => {
+      const projectPath = makeTempDir();
+      const directory = path.join(projectPath, "models");
+      fs.mkdirSync(directory);
+      const definition = path.join(directory, "sofistik.def");
+      fs.writeFileSync(
+        path.join(projectPath, "sofistik.def"),
+        "SOF_VERSION=2024\nSOF_LANGUAGE=DE\n",
+      );
+      fs.writeFileSync(definition, "SOF_VERSION=2026\nSOF_LANGUAGE=EN\n");
+      const previousPaths = lumine.project.getPaths();
+      lumine.project.setPaths([projectPath]);
+      try {
+        const root = makeTempDir();
+        const installed = path.join(root, "2025", "SOFiSTiK 2025");
+        fs.mkdirSync(installed, { recursive: true });
+        fs.writeFileSync(path.join(installed, "wps.exe"), "");
+        mainModule.environmentProvider = new SofistikEnvironmentResolver({ root });
+        const filePath = path.join(directory, "model.dat");
+        expect(mainModule.getVersion(null, filePath)).toBe("2026");
+        expect(mainModule.getLanguage(filePath)).toBe("en");
+        fs.unlinkSync(definition);
+        expect(mainModule.getVersion(null, filePath)).toBe("2025");
+        expect(mainModule.getLanguage(filePath)).toBe("en");
+        mainModule.setVersion("2022", filePath);
+        expect(fs.readFileSync(definition, "utf8")).toBe("SOF_VERSION = 2022\n");
+        expect(fs.readFileSync(path.join(projectPath, "sofistik.def"), "utf8")).toContain("2024");
+      } finally {
+        lumine.project.setPaths(previousPaths);
+      }
+    });
+
+    it("refuses to write a definition for an unsaved source", async () => {
+      const editor = await lumine.workspace.open();
+      expect(editor.getPath()).toBeUndefined();
+      const write = spyOn(fs, "writeFileSync");
+      const warning = spyOn(lumine.notifications, "addWarning");
+      const readFile = jasmine
+        .createSpy("readFile")
+        .and.returnValue("SOF_VERSION=2024\nSOF_LANGUAGE=DE\n");
+      mainModule.environmentProvider = new SofistikEnvironmentResolver({
+        root: makeTempDir(),
+        readFile,
+      });
+      mainModule.setVersion("2024");
+      expect(write).not.toHaveBeenCalled();
+      expect(warning).toHaveBeenCalledWith("Save a file before choosing its SOFiSTiK release.");
+      expect(mainModule.environmentContext()).toEqual({ readDefinition: false });
+      expect(mainModule.getVersion()).toBe("2026");
+      expect(mainModule.getLanguage()).toBe("en");
+      expect(readFile).not.toHaveBeenCalled();
+    });
+
+    it("opens the release and language manual selected beside the source", async () => {
+      const projectPath = makeTempDir();
+      const directory = path.join(projectPath, "models");
+      const root = makeTempDir();
+      const installation = path.join(root, "2026", "SOFiSTiK 2026");
+      fs.mkdirSync(directory);
+      fs.mkdirSync(installation, { recursive: true });
+      fs.writeFileSync(
+        path.join(projectPath, "sofistik.def"),
+        "SOF_VERSION=2024\nSOF_LANGUAGE=EN\n",
+      );
+      fs.writeFileSync(path.join(directory, "sofistik.def"), "SOF_VERSION=2026\nSOF_LANGUAGE=DE\n");
+      fs.writeFileSync(path.join(installation, "wps.exe"), "");
+      fs.writeFileSync(path.join(installation, "aqua_0.pdf"), "");
+      fs.writeFileSync(path.join(installation, "aqua_1.pdf"), "");
+      const filePath = path.join(directory, "model.dat");
+      fs.writeFileSync(filePath, "+PROG AQUA\nHEAD Manual\nEND\n");
+      const editor = await lumine.workspace.open(filePath);
+      editor.setCursorBufferPosition([1, 6]);
+      mainModule.environmentProvider = new SofistikEnvironmentResolver({ root });
+      const viewer = spyOn(mainModule, "getViewer");
+      const previousPaths = lumine.project.getPaths();
+      lumine.project.setPaths([projectPath]);
+      try {
+        mainModule.currentHelp(1);
+        expect(viewer.calls.mostRecent().args[0]).toBe(path.join(installation, "aqua_0.pdf"));
+      } finally {
+        lumine.project.setPaths(previousPaths);
+      }
+    });
+
+    it("keeps the version picker tied to the source that opened it", async () => {
+      const directory = makeTempDir();
+      const filePath = path.join(directory, "model.dat");
+      fs.writeFileSync(filePath, "");
+      const editor = await lumine.workspace.open(filePath);
+      await lumine.commands.dispatch(editor.getElement(), "sofistik-tools:change-version");
+      const list = mainModule.versionList.selectList;
+      const otherDirectory = makeTempDir();
+      fs.writeFileSync(path.join(otherDirectory, "other.dat"), "");
+      await lumine.workspace.open(path.join(otherDirectory, "other.dat"));
+      await list.setItems([{ version: "2024" }]);
+      await list.runAction("sofistik-tools:select-version");
+      expect(fs.readFileSync(path.join(directory, "sofistik.def"), "utf8")).toBe(
+        "SOF_VERSION = 2024\n",
+      );
+      expect(fs.existsSync(path.join(otherDirectory, "sofistik.def"))).toBe(false);
+    });
+
+    it("resolves declared child calculations using each child's directory", async () => {
+      const directory = makeTempDir();
+      fs.mkdirSync(path.join(directory, "children"));
+      const child = path.join(directory, "children", "child.dat");
+      const source = path.join(directory, "model.dat");
+      fs.writeFileSync(child, "+PROG ASE\nEND\n");
+      fs.writeFileSync(source, "@ child:children/child.dat\n+PROG AQUA\nEND\n");
+      const editor = await lumine.workspace.open(source);
+      spyOn(editor, "save").and.resolveTo();
+      const lookup = spyOn(mainModule, "getSofPath").and.returnValue(undefined);
+      await mainModule.runCalc("wps");
+      expect(lookup.calls.allArgs()).toEqual([
+        [undefined, source, editor],
+        [undefined, child, editor],
+      ]);
     });
   });
 
