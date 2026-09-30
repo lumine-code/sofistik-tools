@@ -20,7 +20,8 @@
   },
   "specPackages": [
     "language-sofistik",
-    "language-text"
+    "language-text",
+    "code-lens"
   ],
   "main": "./lib/main",
   "files": [
@@ -37,6 +38,11 @@
     "format:check": "prettier --check ."
   },
   "providedServices": {
+    "code-lens.provider": {
+      "versions": {
+        "1.0.0": "provideCodeLens"
+      }
+    },
     "background-tips.provider": {
       "versions": {
         "1.0.0": "provideBackgroundTips"

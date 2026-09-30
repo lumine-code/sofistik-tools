@@ -8,6 +8,7 @@ Commands and integrations for SOFiSTiK structural analysis workflows.
 
 - **Help system**: open PDF manuals in [pdf-view](https://github.com/lumine-code/pdf-view) with jump-to-command support.
 - **Calculation**: run WPS/SPS directly from the editor.
+- **Inline Run**: run an active PROG block in WPS from its Code Lens action, independently of the cursor position.
 - **File handlers**: open CDB, PLB, GRA files with double-click.
 - **Program control**: toggle programs on/off in `.dat` files.
 - **Clean commands**: delete temporary files from tree-view.
@@ -16,6 +17,10 @@ Commands and integrations for SOFiSTiK structural analysis workflows.
 ## Installation
 
 To install `sofistik-tools` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/sofistik-tools`.
+
+Install [code-lens](https://github.com/lumine-code/code-lens) to display the Run links above active `+PROG` headers. Inline Run is available on `sofistik-tools#master` ahead of the next tagged release.
+
+Click Run to save that file and calculate the selected block in WPS. The action uses the file's project environment and does not move the cursor. Editing the source refreshes its actions; a stale action refuses to launch a different block. Save an untitled file first. A matching SOFiSTiK installation is required.
 
 ## Commands
 
@@ -120,6 +125,8 @@ The examples list can be restyled from your `styles.css`, e.g.:
 
 ## Services
 
+- `code-lens.provider`: provided to code-lens to display Run actions above active PROG headers.
+- `background-tips.provider`: provided to background-tips to explain calculation commands.
 - `tree-view.selection`: consumed to read the selected paths for the tree-view commands (open, clean, wing-fix).
 - `open-external`: consumed to register handlers that open SOFiSTiK file types in their native applications.
 - `pdf-view`: consumed to open and reuse PDF manual viewers with named-destination navigation.
