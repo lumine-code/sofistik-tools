@@ -457,6 +457,85 @@ describe("sofistik-tools", () => {
       expect(mainModule.changeExtension("/proj.v2/model", ".gra")).toBe("/proj.v2/model.gra");
       expect(mainModule.changeExtension("/proj/model.dat", null)).toBe("/proj/model.dat");
     });
+
+    it("opens WinGRAF through the main process with the project's version and directory", async () => {
+      const dir = path.join(makeTempDir(), "project with spaces & symbols");
+      fs.mkdirSync(dir);
+      const inputPath = path.join(dir, "model.dat");
+      const launch = spyOn(lumine.shell, "openApplication").and.resolveTo(4242);
+
+      expect(
+        await mainModule.openWinGRAF(inputPath, { version: "2026", parameters: ["-test"] }),
+      ).toBe(4242);
+
+      expect(launch).toHaveBeenCalledOnceWith(
+        path.join(envPath, "2026", "SOFiSTiK 2026", "wingraf.exe"),
+        [path.join(dir, "model.gra"), "-test"],
+        { cwd: dir },
+      );
+    });
+
+    it("reports a failed WinGRAF start and keeps the external request claimed", async () => {
+      const graPath = path.join(makeTempDir(), "model.gra");
+      spyOn(lumine.shell, "openApplication").and.rejectWith(new Error("Executable not found"));
+      let handler;
+      const subscription = mainModule.consumeOpenExternal({
+        registerHandler(value) {
+          handler = value;
+          return { dispose() {} };
+        },
+      });
+      const warnings = [];
+      const notificationSubscription = lumine.notifications.onDidAddNotification((notification) =>
+        warnings.push(notification),
+      );
+      try {
+        expect(await handler.openExternal(graPath)).toBe(true);
+        expect(warnings.length).toBe(1);
+        expect(warnings[0].getType()).toBe("warning");
+        expect(warnings[0].getOptions().detail).toContain("Executable not found");
+      } finally {
+        notificationSubscription.dispose();
+        subscription.dispose();
+      }
+    });
+
+    it("uses the main-process launcher for every SOFiSTiK external file handler", async () => {
+      const dir = makeTempDir();
+      const launch = spyOn(lumine.shell, "openApplication").and.resolveTo(4242);
+      let handler;
+      const subscription = mainModule.consumeOpenExternal({
+        registerHandler(value) {
+          handler = value;
+          return { dispose() {} };
+        },
+      });
+      const applications = [
+        ["dat", "ted.exe"],
+        ["gra", "wingraf.exe"],
+        ["sofistik", "ssd.exe"],
+        ["cdb", "animator.exe"],
+        ["results", "resultviewer.exe"],
+        ["plb", "ursula.exe"],
+        ["dwg", "sofiplus_launcher.exe"],
+      ];
+      try {
+        for (const [extension] of applications)
+          fs.writeFileSync(path.join(dir, `model.${extension}`), "x");
+        for (const [extension, executable] of applications) {
+          const filePath = path.join(dir, `model.${extension}`);
+          expect(await handler.openExternal(filePath)).toBe(4242);
+          expect(launch.calls.mostRecent().args).toEqual([
+            path.join(envPath, "2026", "SOFiSTiK 2026", executable),
+            [filePath],
+            { cwd: dir },
+          ]);
+        }
+        expect(launch).toHaveBeenCalledTimes(applications.length);
+      } finally {
+        subscription.dispose();
+      }
+    });
   });
 
   describe("ripgrep file discovery", () => {
