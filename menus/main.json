@@ -1,42 +1,4 @@
 {
-  "context-menu": {
-    "lumine-text-editor[data-grammar=\"source sofistik\"]:not([mini])": [
-      {
-        "type": "separator"
-      },
-      {
-        "label": "Current Help",
-        "command": "sofistik-tools:current-help"
-      },
-      {
-        "label": "Calculation WPS",
-        "command": "sofistik-tools:calculation-wps"
-      },
-      {
-        "label": "Calculation WPS Immediately",
-        "command": "sofistik-tools:calculation-wps-immediately"
-      },
-      {
-        "label": "Calculation WPS Current",
-        "command": "sofistik-tools:calculation-wps-current"
-      },
-      {
-        "label": "Open Animator",
-        "command": "sofistik-tools:open-animator"
-      },
-      {
-        "label": "Open WinGRAF",
-        "command": "sofistik-tools:open-wingraf"
-      },
-      {
-        "label": "Open Result Viewer",
-        "command": "sofistik-tools:open-result-viewer"
-      },
-      {
-        "type": "separator"
-      }
-    ]
-  },
   "menu": [
     {
       "label": "Packages",
