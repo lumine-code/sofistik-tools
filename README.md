@@ -119,7 +119,7 @@ The examples list can be restyled from your `styles.css`, e.g.:
 
 ```css
 .example-list .tag {
-  color: var(--accent-only-text-color);
+  color: var(--accent-link-color);
 }
 ```
 
