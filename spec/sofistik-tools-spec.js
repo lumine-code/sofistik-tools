@@ -536,6 +536,139 @@ describe("sofistik-tools", () => {
         subscription.dispose();
       }
     });
+
+    for (const [method, extension, executable] of [
+      ["treeOpenReport", ".plb", "ursula.exe"],
+      ["treeOpenProtocol", ".prt", null],
+    ]) {
+      it(`aggregates missing outputs from ${method} and opens the existing output`, async () => {
+        const dir = makeTempDir();
+        const sources = ["missing-one", "ready", "missing-two"].map((name) =>
+          path.join(dir, `${name}.dat`),
+        );
+        const outputs = sources.map((filePath) => mainModule.changeExtension(filePath, extension));
+        fs.writeFileSync(outputs[1], "x");
+        spyOn(mainModule, "getTreePaths").and.returnValue(sources);
+        const warning = spyOn(lumine.notifications, "addWarning");
+        const launch = executable
+          ? spyOn(lumine.shell, "openApplication").and.resolveTo(4242)
+          : spyOn(lumine.workspace, "open").and.resolveTo(4242);
+        const props = { version: "2026", parameters: ["-test"] };
+
+        const results = mainModule[method](props);
+        expect(Array.isArray(results)).toBeTrue();
+        expect(await Promise.all(results)).toEqual([undefined, 4242, undefined]);
+        expect(warning).toHaveBeenCalledOnceWith("Cannot open 2 missing SOFiSTiK files.", {
+          detail: [outputs[0], outputs[2]].join("\n"),
+        });
+        if (executable) {
+          expect(launch).toHaveBeenCalledOnceWith(
+            path.join(envPath, "2026", "SOFiSTiK 2026", executable),
+            [outputs[1], "-test"],
+            { cwd: dir },
+          );
+        } else {
+          expect(launch).toHaveBeenCalledOnceWith(outputs[1]);
+        }
+        expect(props).toEqual({ version: "2026", parameters: ["-test"] });
+      });
+    }
+
+    it("opens every existing report in a tree selection without a success notification", async () => {
+      const dir = makeTempDir();
+      const sources = [path.join(dir, "first.dat"), path.join(dir, "second.dat")];
+      const outputs = sources.map((filePath) => mainModule.changeExtension(filePath, ".plb"));
+      for (const filePath of outputs) fs.writeFileSync(filePath, "x");
+      spyOn(mainModule, "getTreePaths").and.returnValue(sources);
+      const launch = spyOn(lumine.shell, "openApplication").and.resolveTo(4242);
+      const before = lumine.notifications.getNotifications().length;
+
+      expect(await Promise.all(mainModule.treeOpenReport())).toEqual([4242, 4242]);
+      expect(launch.calls.allArgs()).toEqual(
+        outputs.map((filePath) => [
+          path.join(envPath, "2026", "SOFiSTiK 2026", "ursula.exe"),
+          [filePath],
+          { cwd: dir },
+        ]),
+      );
+      expect(lumine.notifications.getNotifications().length).toBe(before);
+    });
+
+    for (const [method, extension] of [
+      ["openReport", ".plb"],
+      ["openProtocol", ".prt"],
+      ["treeOpenReport", ".plb"],
+      ["treeOpenProtocol", ".prt"],
+    ]) {
+      it(`preserves the individual missing-file warning for ${method}`, () => {
+        const source = path.join(makeTempDir(), "model.dat");
+        const output = mainModule.changeExtension(source, extension);
+        spyOn(mainModule, "getTreePaths").and.returnValue([source]);
+        const warning = spyOn(lumine.notifications, "addWarning");
+
+        mainModule[method](method.startsWith("tree") ? undefined : source);
+
+        expect(warning).toHaveBeenCalledOnceWith(
+          `File doesn't exists "${output.replace(/\\/g, "\\\\")}"`,
+        );
+      });
+    }
+
+    for (const [method, extension, executable, includeMissingPath] of [
+      ["treeOpenWinGRAF", ".gra", "wingraf.exe", true],
+      ["treeOpenResultViewer", ".results", "resultviewer.exe", false],
+      ["treeOpenSOFiPLUS", ".dwg", "sofiplus_launcher.exe", false],
+    ]) {
+      it(`keeps the permissive missing-file behavior of ${method} in a batch`, async () => {
+        const dir = makeTempDir();
+        const sources = [path.join(dir, "first.dat"), path.join(dir, "second.dat")];
+        spyOn(mainModule, "getTreePaths").and.returnValue(sources);
+        const launch = spyOn(lumine.shell, "openApplication").and.resolveTo(4242);
+        const warning = spyOn(lumine.notifications, "addWarning");
+
+        expect(await Promise.all(mainModule[method]())).toEqual([4242, 4242]);
+        expect(launch.calls.allArgs()).toEqual(
+          sources.map((filePath) => [
+            path.join(envPath, "2026", "SOFiSTiK 2026", executable),
+            includeMissingPath ? [mainModule.changeExtension(filePath, extension)] : [],
+            { cwd: dir },
+          ]),
+        );
+        expect(warning).not.toHaveBeenCalled();
+      });
+    }
+
+    it("preserves environment errors instead of reporting missing outputs for a tree batch", () => {
+      const dir = makeTempDir();
+      const sources = [path.join(dir, "first.dat"), path.join(dir, "second.dat")];
+      useEnvironment(path.join(dir, "unavailable"));
+      spyOn(mainModule, "getTreePaths").and.returnValue(sources);
+      const error = spyOn(lumine.notifications, "addError");
+      const warning = spyOn(lumine.notifications, "addWarning");
+      const launch = spyOn(lumine.shell, "openApplication");
+
+      expect(mainModule.treeOpenReport()).toEqual([undefined, undefined]);
+      expect(error).toHaveBeenCalledTimes(2);
+      expect(warning).not.toHaveBeenCalled();
+      expect(launch).not.toHaveBeenCalled();
+    });
+
+    it("aggregates database precondition failures with the missing database paths", () => {
+      const dir = makeTempDir();
+      const sources = [path.join(dir, "first.dat"), path.join(dir, "second.dat")];
+      spyOn(mainModule, "getTreePaths").and.returnValue(sources);
+      spyOn(mainModule, "openReport").and.callFake((filePath, props) =>
+        mainModule.runSOFiSTiK("ursula.exe", ".plb", filePath, props, { existsCDB: true }),
+      );
+      const warning = spyOn(lumine.notifications, "addWarning");
+      const launch = spyOn(lumine.shell, "openApplication");
+
+      expect(mainModule.treeOpenReport()).toEqual([undefined, undefined]);
+      expect(warning).toHaveBeenCalledOnceWith("Cannot open 2 missing SOFiSTiK files.", {
+        detail: sources.map((filePath) => mainModule.changeExtension(filePath, ".cdb")).join("\n"),
+      });
+      expect(launch).not.toHaveBeenCalled();
+    });
   });
 
   describe("ripgrep file discovery", () => {
