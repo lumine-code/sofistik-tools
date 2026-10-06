@@ -572,6 +572,23 @@ describe("sofistik-tools", () => {
         }
         expect(props).toEqual({ version: "2026", parameters: ["-test"] });
       });
+
+      it(`counts a missing output only once for different source extensions in ${method}`, () => {
+        const dir = makeTempDir();
+        const sources = [path.join(dir, "model.dat"), path.join(dir, "model.log")];
+        const output = path.join(dir, `model${extension}`);
+        spyOn(mainModule, "getTreePaths").and.returnValue(sources);
+        const warning = spyOn(lumine.notifications, "addWarning");
+        const launch = spyOn(lumine.shell, "openApplication");
+        const open = spyOn(lumine.workspace, "open");
+
+        expect(mainModule[method]()).toEqual([undefined, undefined]);
+        expect(warning).toHaveBeenCalledOnceWith("Cannot open 1 missing SOFiSTiK file.", {
+          detail: output,
+        });
+        expect(launch).not.toHaveBeenCalled();
+        expect(open).not.toHaveBeenCalled();
+      });
     }
 
     it("opens every existing report in a tree selection without a success notification", async () => {
