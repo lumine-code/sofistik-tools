@@ -18,13 +18,13 @@ Commands and integrations for SOFiSTiK structural analysis workflows.
 
 To install `sofistik-tools` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/sofistik-tools`.
 
-Install [code-lens](https://github.com/lumine-code/code-lens) to display the Run links above active `+PROG` headers. Inline Run is available on `sofistik-tools#master` ahead of the next tagged release.
+Install [code-lens](https://github.com/lumine-code/code-lens) to display the Run links above active `+PROG` headers.
 
 Click Run to save that file and calculate the selected block in WPS. The action uses the file's project environment and does not move the cursor. Editing the source refreshes its actions; a stale action refuses to launch a different block. Save an untitled file first. A matching SOFiSTiK installation is required.
 
 ## Commands
 
-Commands available in `lumine-workspace`. Each acts on the active editor and declines with a notification when its grammar is not SOFiSTiK:
+Commands available in `lumine-workspace`. Each uses the editor that dispatched it, falling back to the active editor, and declines with a notification when its grammar is not SOFiSTiK:
 
 - `sofistik-tools:current-help`: open help for current module in PDF view (reuses pane),
 - `sofistik-tools:separately-help`: open help for current module in new pane,
@@ -99,7 +99,10 @@ Commands available in `lumine-workspace`, acting on the tree view selection:
 - `sofistik-tools:open-result-viewer`: open selected `.results` in Result Viewer,
 - `sofistik-tools:open-teddy`: open selected file in Teddy,
 - `sofistik-tools:open-teddy-single`: open in Teddy (single instance),
-- `sofistik-tools:open-teddy-n`: open in Teddy slot n=1-4,
+- `sofistik-tools:open-teddy-1`: open in Teddy slot 1,
+- `sofistik-tools:open-teddy-2`: open in Teddy slot 2,
+- `sofistik-tools:open-teddy-3`: open in Teddy slot 3,
+- `sofistik-tools:open-teddy-4`: open in Teddy slot 4,
 - `sofistik-tools:open-sofiplus`: open selected `.dwg` in SOFiPLUS,
 - `sofistik-tools:export-cdb`: open CDB export for selected file,
 - `sofistik-tools:check-version`: show the resolved SOFiSTiK version,
@@ -112,6 +115,14 @@ Commands available in `lumine-workspace`, acting on the tree view selection:
 - `sofistik-tools:wing-fix-recursively`: fix MSCA issues recursively.
 
 Each `clean-n` command also has a `clean-n-recursively` variant that descends into subdirectories.
+
+## Usage
+
+Place `sofistik.def` beside a saved source to declare `SOF_VERSION`, `SOF_LANGUAGE` (`EN` or `DE`) and `SOF_EDITION` (`professional` or `educational`). Files in different directories resolve independently. Without an adjacent declared year, the newest installed release applies, then the newest bundled dataset for offline keyword data. Every application checks its own executable, so a CDB-only installation cannot start a calculation.
+
+Calculations capture their editor and environments before saving. Parent and open child buffers save before the first launch; a source change or package deactivation while saving prevents the pending action. Manuals and examples keep the selected installation's paths even if another project takes focus.
+
+See [Workflows](docs/1_Workflows.md) for child calculations, program boundaries, manual navigation and maintenance, and [Architecture](docs/2_Architecture.md) for module ownership and validation.
 
 ## Customization
 
@@ -130,8 +141,6 @@ The examples list can be restyled from your `styles.css`, e.g.:
 - `tree-view.selection`: consumed to read the selected paths for the tree-view commands (open, clean, wing-fix).
 - `open-external`: consumed to register handlers that open SOFiSTiK file types in their native applications.
 - `pdf-view`: consumed to open and reuse PDF manual viewers with named-destination navigation.
-
-Application launches and manual keyword lookups use `SofistikEnvironmentResolver` from `@lumine-code/sofistik-data` which extends the lightweight `sofistik-env` library with keyword data, without an editor environment service or settings. Only the `sofistik.def` beside the requested file declares `SOF_VERSION`, `SOF_LANGUAGE` (`EN` or `DE`) and `SOF_EDITION` (`professional` or `educational`); workspace roots and parent directories are never searched. Each declared child calculation uses its own directory. Empty installation directories are ignored. Without an adjacent declared year, the newest installed release under `C:\Program Files\SOFiSTiK` applies, then the newest bundled dataset. Headers never select a year or language. English and Professional are the defaults. If the exact selected release is not installed, the command reports it instead of launching another one. Commands explicitly naming an application release still honour it. The version picker writes `SOF_VERSION` beside the saved file that opened it; `Auto` removes that declaration while preserving other fields. An unsaved file cannot write a definition.
 
 ## Contributing
 

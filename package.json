@@ -25,6 +25,7 @@
   ],
   "main": "./lib/main",
   "files": [
+    "docs",
     "keymaps",
     "lib",
     "menus",

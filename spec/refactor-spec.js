@@ -175,6 +175,30 @@ describe("SOFiSTiK operation boundaries", () => {
     expect(warnings()).toContain("does not provide wps.exe");
   });
 
+  it("does not start the parent when saving an open child fails", async () => {
+    install("2026");
+    const child = await openSource("child.dat", "+PROG ASE\nEND\n");
+    const parent = await openSource("parent.dat", "@ child:child.dat\n+PROG AQUA\nEND\n");
+    child.setText("+PROG ASE\nHEAD unsaved\nEND\n");
+    spyOn(child, "save").and.rejectWith(new Error("Child save refused"));
+    const launch = spyOn(runtime, "createCalculationProcess");
+    await expectAsync(
+      lumine.commands.dispatch(parent.getElement(), "sofistik-tools:calculation-wps"),
+    ).toBeRejectedWithError("Child save refused");
+    expect(launch).not.toHaveBeenCalled();
+  });
+
+  it("guards an unsupported editor before resolving its project environment", async () => {
+    const editor = await openSource("model.dat", "+PROG AQUA\nEND\n");
+    spyOn(editor, "getGrammar").and.returnValue({ scopeName: "text.plain" });
+    const resolve = spyOn(runtime.ensureEnvironment(), "resolve").and.throwError(
+      "Unexpected environment lookup",
+    );
+    await lumine.commands.dispatch(editor.getElement(), "sofistik-tools:calculation-wps");
+    expect(resolve).not.toHaveBeenCalled();
+    expect(warnings()).toContain("Not a SOFiSTiK file");
+  });
+
   it("loads German examples for the canonical language code and snapshots item paths", async () => {
     const installPath = install("2026", [
       "wps.exe",

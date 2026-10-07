@@ -7,79 +7,331 @@
           "label": "SOFiSTiK Tools",
           "submenu": [
             {
-              "label": "Calculation WPS",
-              "command": "sofistik-tools:calculation-wps"
+              "label": "Calculation",
+              "submenu": [
+                {
+                  "label": "Calculation WPS",
+                  "command": "sofistik-tools:calculation-wps"
+                },
+                {
+                  "label": "Calculation WPS Immediately",
+                  "command": "sofistik-tools:calculation-wps-immediately"
+                },
+                {
+                  "label": "Calculation WPS Current",
+                  "command": "sofistik-tools:calculation-wps-current"
+                },
+                {
+                  "label": "Calculation SPS",
+                  "command": "sofistik-tools:calculation-sps"
+                }
+              ]
             },
             {
-              "label": "Calculation WPS Immediately",
-              "command": "sofistik-tools:calculation-wps-immediately"
-            },
-            {
-              "label": "Calculation SPS",
-              "command": "sofistik-tools:calculation-sps"
-            },
-            {
-              "type": "separator"
-            },
-            {
-              "label": "Current Help",
-              "command": "sofistik-tools:current-help"
+              "label": "Documentation",
+              "submenu": [
+                {
+                  "label": "Current Help",
+                  "command": "sofistik-tools:current-help"
+                },
+                {
+                  "label": "Separate Help",
+                  "command": "sofistik-tools:separately-help"
+                },
+                {
+                  "label": "Search Manuals…",
+                  "command": "sofistik-tools:toggle-help"
+                },
+                {
+                  "label": "Reindex Manuals",
+                  "command": "sofistik-tools:cache-help"
+                },
+                {
+                  "type": "separator"
+                },
+                {
+                  "label": "Browse Examples…",
+                  "command": "sofistik-tools:toggle-examples"
+                },
+                {
+                  "label": "Reindex Examples",
+                  "command": "sofistik-tools:cache-examples"
+                },
+                {
+                  "type": "separator"
+                },
+                {
+                  "label": "Open cdbase.chm",
+                  "command": "sofistik-tools:open-cdbase"
+                },
+                {
+                  "label": "Open sofistik_daten.py",
+                  "command": "sofistik-tools:open-daten"
+                }
+              ]
             },
             {
               "label": "Open",
               "submenu": [
                 {
-                  "label": "Report",
-                  "command": "sofistik-tools:open-report"
+                  "label": "Model Results",
+                  "submenu": [
+                    {
+                      "label": "Animator",
+                      "command": "sofistik-tools:open-animator"
+                    },
+                    {
+                      "label": "Animator 2018",
+                      "command": "sofistik-tools:open-animator-2018"
+                    },
+                    {
+                      "label": "Viewer",
+                      "command": "sofistik-tools:open-viewer"
+                    },
+                    {
+                      "label": "Viewer 2025",
+                      "command": "sofistik-tools:open-viewer-2025"
+                    },
+                    {
+                      "label": "DBInfo",
+                      "command": "sofistik-tools:open-dbinfo"
+                    }
+                  ]
                 },
                 {
-                  "label": "Protocol",
-                  "command": "sofistik-tools:open-protocol"
+                  "label": "Reports",
+                  "submenu": [
+                    {
+                      "label": "Open Report",
+                      "command": "sofistik-tools:open-report"
+                    },
+                    {
+                      "label": "Save Report as PDF",
+                      "command": "sofistik-tools:save-report-as-pdf"
+                    },
+                    {
+                      "label": "Save Pictures as PDF",
+                      "command": "sofistik-tools:save-pictures-as-pdf"
+                    },
+                    {
+                      "label": "Export PLB to DOCX",
+                      "command": "sofistik-tools:export-plb-to-docx"
+                    },
+                    {
+                      "label": "Open Protocol",
+                      "command": "sofistik-tools:open-protocol"
+                    }
+                  ]
                 },
                 {
-                  "label": "Animator",
-                  "command": "sofistik-tools:open-animator"
+                  "label": "Graphics",
+                  "submenu": [
+                    {
+                      "label": "WinGRAF",
+                      "command": "sofistik-tools:open-wingraf"
+                    },
+                    {
+                      "label": "Result Viewer",
+                      "command": "sofistik-tools:open-result-viewer"
+                    }
+                  ]
                 },
                 {
-                  "label": "Viewer",
-                  "command": "sofistik-tools:open-viewer"
+                  "label": "Project Applications",
+                  "submenu": [
+                    {
+                      "label": "Teddy",
+                      "submenu": [
+                        {
+                          "label": "Open Teddy",
+                          "command": "sofistik-tools:open-teddy"
+                        },
+                        {
+                          "label": "Open Teddy Single",
+                          "command": "sofistik-tools:open-teddy-single"
+                        },
+                        {
+                          "label": "Open Teddy 1",
+                          "command": "sofistik-tools:open-teddy-1"
+                        },
+                        {
+                          "label": "Open Teddy 2",
+                          "command": "sofistik-tools:open-teddy-2"
+                        },
+                        {
+                          "label": "Open Teddy 3",
+                          "command": "sofistik-tools:open-teddy-3"
+                        },
+                        {
+                          "label": "Open Teddy 4",
+                          "command": "sofistik-tools:open-teddy-4"
+                        }
+                      ]
+                    },
+                    {
+                      "label": "SSD",
+                      "command": "sofistik-tools:open-ssd"
+                    },
+                    {
+                      "label": "SOFiPLUS",
+                      "command": "sofistik-tools:open-sofiplus"
+                    }
+                  ]
                 },
                 {
-                  "label": "WinGRAF",
-                  "command": "sofistik-tools:open-wingraf"
-                },
-                {
-                  "label": "Result Viewer",
-                  "command": "sofistik-tools:open-result-viewer"
-                },
-                {
-                  "label": "SSD",
-                  "command": "sofistik-tools:open-ssd"
-                },
-                {
-                  "label": "DBInfo",
-                  "command": "sofistik-tools:open-dbinfo"
+                  "label": "Transfer",
+                  "submenu": [
+                    {
+                      "label": "Export CDB…",
+                      "command": "sofistik-tools:export-cdb"
+                    },
+                    {
+                      "label": "IFC Import…",
+                      "command": "sofistik-tools:ifc-import"
+                    },
+                    {
+                      "label": "IFC Export…",
+                      "command": "sofistik-tools:ifc-export"
+                    }
+                  ]
                 }
               ]
             },
             {
-              "type": "separator"
+              "label": "Programs",
+              "submenu": [
+                {
+                  "label": "Toggle Current",
+                  "command": "sofistik-tools:program-current-toggle"
+                },
+                {
+                  "label": "All",
+                  "submenu": [
+                    {
+                      "label": "Toggle",
+                      "command": "sofistik-tools:program-all-toggle"
+                    },
+                    {
+                      "label": "Turn On",
+                      "command": "sofistik-tools:program-all-on"
+                    },
+                    {
+                      "label": "Turn Off",
+                      "command": "sofistik-tools:program-all-off"
+                    }
+                  ]
+                },
+                {
+                  "label": "Above Cursor",
+                  "submenu": [
+                    {
+                      "label": "Toggle",
+                      "command": "sofistik-tools:program-above-toggle"
+                    },
+                    {
+                      "label": "Turn On",
+                      "command": "sofistik-tools:program-above-on"
+                    },
+                    {
+                      "label": "Turn Off",
+                      "command": "sofistik-tools:program-above-off"
+                    }
+                  ]
+                },
+                {
+                  "label": "Below Cursor",
+                  "submenu": [
+                    {
+                      "label": "Toggle",
+                      "command": "sofistik-tools:program-below-toggle"
+                    },
+                    {
+                      "label": "Turn On",
+                      "command": "sofistik-tools:program-below-on"
+                    },
+                    {
+                      "label": "Turn Off",
+                      "command": "sofistik-tools:program-below-off"
+                    }
+                  ]
+                },
+                {
+                  "label": "Clear URS Tags",
+                  "command": "sofistik-tools:clear-urs-tags"
+                }
+              ]
             },
             {
-              "label": "IFC Export",
-              "command": "sofistik-tools:ifc-export"
+              "label": "Maintenance",
+              "submenu": [
+                {
+                  "label": "Clean",
+                  "submenu": [
+                    {
+                      "label": "Level 1",
+                      "command": "sofistik-tools:clean-1"
+                    },
+                    {
+                      "label": "Level 2",
+                      "command": "sofistik-tools:clean-2"
+                    },
+                    {
+                      "label": "Level 3",
+                      "command": "sofistik-tools:clean-3"
+                    },
+                    {
+                      "label": "Level 4",
+                      "command": "sofistik-tools:clean-4"
+                    },
+                    {
+                      "label": "Recursively",
+                      "submenu": [
+                        {
+                          "label": "Level 1",
+                          "command": "sofistik-tools:clean-1-recursively"
+                        },
+                        {
+                          "label": "Level 2",
+                          "command": "sofistik-tools:clean-2-recursively"
+                        },
+                        {
+                          "label": "Level 3",
+                          "command": "sofistik-tools:clean-3-recursively"
+                        },
+                        {
+                          "label": "Level 4",
+                          "command": "sofistik-tools:clean-4-recursively"
+                        }
+                      ]
+                    },
+                    {
+                      "label": "Custom Pattern…",
+                      "command": "sofistik-tools:clean-glob"
+                    }
+                  ]
+                },
+                {
+                  "label": "Fix WinGRAF",
+                  "command": "sofistik-tools:wing-fix"
+                },
+                {
+                  "label": "Fix WinGRAF Recursively",
+                  "command": "sofistik-tools:wing-fix-recursively"
+                }
+              ]
             },
             {
-              "label": "IFC Import",
-              "command": "sofistik-tools:ifc-import"
-            },
-            {
-              "label": "Open cdbase.chm",
-              "command": "sofistik-tools:open-cdbase"
-            },
-            {
-              "label": "Open sofistik_daten.py",
-              "command": "sofistik-tools:open-daten"
+              "label": "Environment",
+              "submenu": [
+                {
+                  "label": "Check Version",
+                  "command": "sofistik-tools:check-version"
+                },
+                {
+                  "label": "Change Version…",
+                  "command": "sofistik-tools:change-version"
+                }
+              ]
             }
           ]
         }

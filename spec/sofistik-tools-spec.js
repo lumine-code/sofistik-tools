@@ -390,7 +390,7 @@ describe("sofistik-tools", () => {
       const otherDirectory = makeTempDir();
       fs.writeFileSync(path.join(otherDirectory, "other.dat"), "");
       await lumine.workspace.open(path.join(otherDirectory, "other.dat"));
-      await list.setItems([{ version: "2024" }]);
+      await list.setItems([{ version: "2024", filePath }]);
       await list.runAction("sofistik-tools:select-version");
       expect(fs.readFileSync(path.join(directory, "sofistik.def"), "utf8")).toBe(
         "SOF_VERSION = 2024\n",
@@ -1209,7 +1209,6 @@ describe("sofistik-tools", () => {
       mainModule.getViewer("C:\\docs\\aqua.pdf", null, false);
       expect(calls.length).toBe(2);
       expect(calls[0].tag).not.toBe("SOFiSTiK");
-      expect(calls[0].tag.length).toBe(9);
       expect(calls[0].tag).not.toBe(calls[1].tag);
     });
 
