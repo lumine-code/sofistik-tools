@@ -1,7 +1,7 @@
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const corpus = require("@lumine-code/sofistik-data/fixtures/cadinp-structure.json");
+const corpus = require("@lumine-code/sofistik-schema/fixtures/cadinp-structure.json");
 
 describe("SOFiSTiK operation boundaries", () => {
   let main, runtime, directory, editors, resolverClass;
@@ -44,7 +44,7 @@ describe("SOFiSTiK operation boundaries", () => {
     await lumine.packages.activatePackage(path.join(__dirname, "..", "..", "language-sofistik"));
     main = (await lumine.packages.activatePackage("sofistik-tools")).mainModule;
     runtime = main.ensureRuntime();
-    resolverClass = require("@lumine-code/sofistik-env").SofistikEnvironmentResolver;
+    resolverClass = require("@lumine-code/sofistik-context").SofistikContextResolver;
     runtime.environmentProvider = new resolverClass({ root: path.join(directory, "installed") });
     lumine.notifications.clear();
   });

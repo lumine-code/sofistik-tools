@@ -22,9 +22,9 @@ SOFiSTiK Tools composes environment discovery, keyword datasets and editor workf
 
 ## Library composition
 
-`@lumine-code/sofistik-env` owns declaration normalization, installation discovery, executable capabilities, CDB interface naming and definition updates. Tools creates its resolver directly and supplies a dataset fallback explicitly.
+`@lumine-code/sofistik-context` owns declaration normalization, installation discovery, executable capabilities, CDB interface naming and definition updates. Tools creates its resolver directly and supplies a dataset fallback explicitly.
 
-`@lumine-code/sofistik-data` owns release and language datasets. Manual destinations use `SofistikDataProvider.forRelease(environment.version, environment.language)`. The keyword provider receives the same resolved year and language as the installation lookup. It does not select a second project environment.
+`@lumine-code/sofistik-schema` owns release and language datasets. Manual destinations use `SofistikSchemaProvider.forRelease(environment.version, environment.language)`. The keyword provider receives the same resolved year and language as the installation lookup. It does not select a second project environment.
 
 Each feature resolves only its effective file targets before its first asynchronous boundary. An unrelated tree selection cannot change an editor operation, and a background editor cannot change a tree operation. Source editing and maintenance require no environment validation. Installation capabilities are checked for the requested application before launching. Changing an adjacent definition while a save is pending changes a later operation, not the environment already chosen for that calculation.
 
@@ -36,4 +36,4 @@ Calculation guards cover both source identity and activation identity after save
 
 ## Validation
 
-The package's Lumine specs exercise live grammar scopes, actual list hosts and the Code Lens frontend. They also cover save races, source and environment snapshots, provider replacement, cancellation, partial installations, German examples and cleanup selection. A shared CADINP corpus from `sofistik-data/fixtures/cadinp-structure.json` checks program boundaries against the same fixtures used by the language server.
+The package's Lumine specs exercise live grammar scopes, actual list hosts and the Code Lens frontend. They also cover save races, source and environment snapshots, provider replacement, cancellation, partial installations, German examples and cleanup selection. A shared CADINP corpus from `sofistik-schema/fixtures/cadinp-structure.json` checks program boundaries against the same fixtures used by the language server.

@@ -1,7 +1,7 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { SofistikEnvironmentResolver } = require("@lumine-code/sofistik-env");
+const { SofistikContextResolver } = require("@lumine-code/sofistik-context");
 
 const PACKAGE_ROOT = path.resolve(__dirname, "..");
 const SOURCE = [
@@ -224,7 +224,7 @@ describe("SOFiSTiK Run links in the code-lens frontend", () => {
       fs.writeFileSync(path.join(installPath, "wps.exe"), "");
     }
     tools.getApplicationPath.and.callThrough();
-    tools.environmentProvider = new SofistikEnvironmentResolver({ root: installationRoot });
+    tools.environmentProvider = new SofistikContextResolver({ root: installationRoot });
     const previousPaths = lumine.project.getPaths();
     lumine.project.setPaths([projectPath]);
     try {
