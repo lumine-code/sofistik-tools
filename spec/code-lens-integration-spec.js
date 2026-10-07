@@ -1,7 +1,7 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { SofistikEnvironmentResolver } = require("@lumine-code/sofistik-data");
+const { SofistikEnvironmentResolver } = require("@lumine-code/sofistik-env");
 
 const PACKAGE_ROOT = path.resolve(__dirname, "..");
 const SOURCE = [
@@ -48,7 +48,9 @@ describe("SOFiSTiK Run links in the code-lens frontend", () => {
     anchor.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
 
   function stubNativeLaunch() {
-    spyOn(tools, "getSofPath").and.returnValue(path.join(directory, "installation"));
+    spyOn(tools, "getApplicationPath").and.callFake((name) =>
+      path.join(directory, "installation", name),
+    );
     processSpy = spyOn(tools, "createCalculationProcess").and.returnValue({ kill() {} });
     runSpy = spyOn(tools, "runProgramAt").and.callThrough();
   }
@@ -68,7 +70,7 @@ describe("SOFiSTiK Run links in the code-lens frontend", () => {
     await lumine.packages.activatePackage(companionPath("language-sofistik"));
     frontend = (await lumine.packages.activatePackage(companionPath("code-lens"))).mainModule;
     lumine.config.set("code-lens.enabled", true);
-    tools = (await lumine.packages.activatePackage(PACKAGE_ROOT)).mainModule;
+    tools = (await lumine.packages.activatePackage(PACKAGE_ROOT)).mainModule.ensureRuntime();
     lumine.config.unset("sofistik-tools.inlineActions");
     lumine.config.unset("sofistik-tools.inlineActions", { scopeSelector: ".source.sofistik" });
     stubNativeLaunch();
@@ -97,7 +99,7 @@ describe("SOFiSTiK Run links in the code-lens frontend", () => {
   });
 
   it("registers the real provider and renders an actionable Run link above each +PROG", () => {
-    const provider = tools.provideCodeLens();
+    const provider = tools.owner.provideCodeLens();
     expect(frontend.manager.registry.providers).toContain(provider);
     expect(rows()).toEqual([1, 6]);
     for (const row of rows()) {
@@ -191,18 +193,18 @@ describe("SOFiSTiK Run links in the code-lens frontend", () => {
 
   it("removes links when the provider unloads and reacquires a fresh package generation", async () => {
     const previousMain = tools;
-    const previousProvider = tools.provideCodeLens();
+    const previousProvider = tools.owner.provideCodeLens();
     await lumine.packages.unloadPackage("sofistik-tools");
     await waitFor(() => rows().length === 0, "provider links to be removed");
     expect(frontend.manager.registry.providers).not.toContain(previousProvider);
     expect(editor.getElement().querySelectorAll(".code-lens").length).toBe(0);
 
-    tools = (await lumine.packages.activatePackage(PACKAGE_ROOT)).mainModule;
+    tools = (await lumine.packages.activatePackage(PACKAGE_ROOT)).mainModule.ensureRuntime();
     stubNativeLaunch();
     expect(tools).not.toBe(previousMain);
-    expect(tools.provideCodeLens()).not.toBe(previousProvider);
+    expect(tools.owner.provideCodeLens()).not.toBe(previousProvider);
     await waitFor(() => rows().join(",") === "1,6", "the fresh provider's links");
-    expect(frontend.manager.registry.providers).toContain(tools.provideCodeLens());
+    expect(frontend.manager.registry.providers).toContain(tools.owner.provideCodeLens());
     expect(processSpy).not.toHaveBeenCalled();
   });
 
@@ -221,7 +223,7 @@ describe("SOFiSTiK Run links in the code-lens frontend", () => {
       fs.mkdirSync(installPath, { recursive: true });
       fs.writeFileSync(path.join(installPath, "wps.exe"), "");
     }
-    tools.getSofPath.and.callThrough();
+    tools.getApplicationPath.and.callThrough();
     tools.environmentProvider = new SofistikEnvironmentResolver({ root: installationRoot });
     const previousPaths = lumine.project.getPaths();
     lumine.project.setPaths([projectPath]);

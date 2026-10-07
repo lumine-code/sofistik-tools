@@ -2,7 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const os = require("os");
 const { pathToFileURL } = require("url");
-const { SofistikEnvironmentResolver } = require("@lumine-code/sofistik-data");
+const { SofistikEnvironmentResolver } = require("@lumine-code/sofistik-env");
 
 function pdfURI(filePath, destination) {
   const uri = pathToFileURL(filePath);
@@ -40,7 +40,9 @@ describe("sofistik-tools", () => {
   // Stand-in for the direct library resolver used by native launch tests.
   function useEnvironment(root, version = "2026", language = "en") {
     mainModule.environmentProvider = {
-      getKeywordContext: () => null,
+      applicationPath: (environment, name) =>
+        environment.installed ? path.join(environment.installPath, name) : null,
+      getInstalledVersions: () => [version],
       resolve: ({ version: asked } = {}) => {
         const release = asked && asked !== "Auto" ? String(asked) : version;
         const installPath = root ? path.join(root, release, `SOFiSTiK ${release}`) : "";
@@ -79,13 +81,14 @@ describe("sofistik-tools", () => {
     jasmine.attachToDOM(workspaceElement);
     await lumine.packages.activatePackage(LANGUAGE_SOFISTIK_PATH);
     const pack = await lumine.packages.activatePackage("sofistik-tools");
-    mainModule = pack.mainModule;
+    mainModule = pack.mainModule.ensureRuntime();
   });
 
   afterEach(() => {
     // The package is activated once and cached, so stand-in providers outlive
     // the spec that set them unless cleared.
     mainModule.environmentProvider = null;
+    mainModule.dataProvider = null;
     for (const dir of tempDirs) {
       try {
         // Retries because Windows keeps a directory non-empty until the last handle on a
@@ -201,7 +204,7 @@ describe("sofistik-tools", () => {
       expect(typeof resolver.resolve).toBe("function");
       expect(mainModule.ensureEnvironment()).toBe(resolver);
       expect(request).not.toHaveBeenCalled();
-      expect(mainModule.consumeSofistikEnvironment).toBeUndefined();
+      expect(mainModule.owner.consumeSofistikEnvironment).toBeUndefined();
     });
 
     it("passes the requested file and any chosen release without a workspace root", () => {
@@ -272,7 +275,7 @@ describe("sofistik-tools", () => {
       const filePath = path.join(projectPath, "model.dat");
       mainModule.setVersion("2024", filePath);
       expect(fs.readFileSync(definition, "utf8")).toBe(
-        "SOF_LANGUAGE = DE\r\nSOF_EDITION = educational\r\nOTHER = value\r\nSOF_VERSION = 2024\r\n",
+        "SOF_LANGUAGE = DE\r\nSOF_VERSION = 2024\r\nSOF_EDITION = educational\r\nOTHER = value\r\n",
       );
       mainModule.setVersion("Auto", filePath);
       expect(fs.readFileSync(definition, "utf8")).toBe(
@@ -287,7 +290,7 @@ describe("sofistik-tools", () => {
       const filePath = path.join(projectPath, "model.dat");
       mainModule.setVersion("2024", filePath);
       expect(fs.readFileSync(definition, "utf8")).toBe(
-        "\uFEFFSOF_EDITION = educational\nSOF_VERSION = 2024\n",
+        "\uFEFFSOF_VERSION = 2024\nSOF_EDITION = educational\n",
       );
       const resolver = new SofistikEnvironmentResolver({ root: makeTempDir() });
       expect(resolver.resolve({ filePath }).version).toBe("2024");
@@ -341,7 +344,7 @@ describe("sofistik-tools", () => {
       expect(write).not.toHaveBeenCalled();
       expect(warning).toHaveBeenCalledWith("Save a file before choosing its SOFiSTiK release.");
       expect(mainModule.environmentContext()).toEqual({ readDefinition: false });
-      expect(mainModule.getVersion()).toBe("2026");
+      expect(mainModule.getVersion()).toBeNull();
       expect(mainModule.getLanguage()).toBe("en");
       expect(readFile).not.toHaveBeenCalled();
     });
@@ -404,12 +407,16 @@ describe("sofistik-tools", () => {
       fs.writeFileSync(source, "@ child:children/child.dat\n+PROG AQUA\nEND\n");
       const editor = await lumine.workspace.open(source);
       spyOn(editor, "save").and.resolveTo();
-      const lookup = spyOn(mainModule, "getSofPath").and.returnValue(undefined);
+      const requested = [];
+      mainModule.environmentProvider = {
+        resolve: (context) => {
+          requested.push(context.filePath);
+          return { version: "2026", language: "en" };
+        },
+      };
+      spyOn(mainModule, "getApplicationPath").and.returnValue(null);
       await mainModule.runCalc("wps");
-      expect(lookup.calls.allArgs()).toEqual([
-        [undefined, source, editor],
-        [undefined, child, editor],
-      ]);
+      expect([...new Set(requested)].sort()).toEqual([source, child].sort());
     });
   });
 
@@ -479,7 +486,7 @@ describe("sofistik-tools", () => {
       const graPath = path.join(makeTempDir(), "model.gra");
       spyOn(lumine.shell, "openApplication").and.rejectWith(new Error("Executable not found"));
       let handler;
-      const subscription = mainModule.consumeOpenExternal({
+      const subscription = mainModule.owner.consumeOpenExternal({
         registerHandler(value) {
           handler = value;
           return { dispose() {} };
@@ -504,7 +511,7 @@ describe("sofistik-tools", () => {
       const dir = makeTempDir();
       const launch = spyOn(lumine.shell, "openApplication").and.resolveTo(4242);
       let handler;
-      const subscription = mainModule.consumeOpenExternal({
+      const subscription = mainModule.owner.consumeOpenExternal({
         registerHandler(value) {
           handler = value;
           return { dispose() {} };
@@ -555,7 +562,7 @@ describe("sofistik-tools", () => {
           : spyOn(lumine.workspace, "open").and.resolveTo(4242);
         const props = { version: "2026", parameters: ["-test"] };
 
-        const results = mainModule[method](props);
+        const results = mainModule.openTreePaths(method[4].toLowerCase() + method.slice(5), props);
         expect(Array.isArray(results)).toBeTrue();
         expect(await Promise.all(results)).toEqual([undefined, 4242, undefined]);
         expect(warning).toHaveBeenCalledOnceWith("Cannot open 2 missing SOFiSTiK files.", {
@@ -582,7 +589,10 @@ describe("sofistik-tools", () => {
         const launch = spyOn(lumine.shell, "openApplication");
         const open = spyOn(lumine.workspace, "open");
 
-        expect(mainModule[method]()).toEqual([undefined, undefined]);
+        expect(mainModule.openTreePaths(method[4].toLowerCase() + method.slice(5))).toEqual([
+          undefined,
+          undefined,
+        ]);
         expect(warning).toHaveBeenCalledOnceWith("Cannot open 1 missing SOFiSTiK file.", {
           detail: output,
         });
@@ -600,7 +610,7 @@ describe("sofistik-tools", () => {
       const launch = spyOn(lumine.shell, "openApplication").and.resolveTo(4242);
       const before = lumine.notifications.getNotifications().length;
 
-      expect(await Promise.all(mainModule.treeOpenReport())).toEqual([4242, 4242]);
+      expect(await Promise.all(mainModule.openTreePaths("openReport"))).toEqual([4242, 4242]);
       expect(launch.calls.allArgs()).toEqual(
         outputs.map((filePath) => [
           path.join(envPath, "2026", "SOFiSTiK 2026", "ursula.exe"),
@@ -623,7 +633,9 @@ describe("sofistik-tools", () => {
         spyOn(mainModule, "getTreePaths").and.returnValue([source]);
         const warning = spyOn(lumine.notifications, "addWarning");
 
-        mainModule[method](method.startsWith("tree") ? undefined : source);
+        if (method.startsWith("tree"))
+          mainModule.openTreePaths(method[4].toLowerCase() + method.slice(5));
+        else mainModule[method](source);
 
         expect(warning).toHaveBeenCalledOnceWith(
           `File doesn't exists "${output.replace(/\\/g, "\\\\")}"`,
@@ -643,7 +655,9 @@ describe("sofistik-tools", () => {
         const launch = spyOn(lumine.shell, "openApplication").and.resolveTo(4242);
         const warning = spyOn(lumine.notifications, "addWarning");
 
-        expect(await Promise.all(mainModule[method]())).toEqual([4242, 4242]);
+        expect(
+          await Promise.all(mainModule.openTreePaths(method[4].toLowerCase() + method.slice(5))),
+        ).toEqual([4242, 4242]);
         expect(launch.calls.allArgs()).toEqual(
           sources.map((filePath) => [
             path.join(envPath, "2026", "SOFiSTiK 2026", executable),
@@ -660,13 +674,14 @@ describe("sofistik-tools", () => {
       const sources = [path.join(dir, "first.dat"), path.join(dir, "second.dat")];
       useEnvironment(path.join(dir, "unavailable"));
       spyOn(mainModule, "getTreePaths").and.returnValue(sources);
-      const error = spyOn(lumine.notifications, "addError");
       const warning = spyOn(lumine.notifications, "addWarning");
       const launch = spyOn(lumine.shell, "openApplication");
 
-      expect(mainModule.treeOpenReport()).toEqual([undefined, undefined]);
-      expect(error).toHaveBeenCalledTimes(2);
-      expect(warning).not.toHaveBeenCalled();
+      expect(mainModule.openTreePaths("openReport")).toEqual([undefined, undefined]);
+      expect(warning).toHaveBeenCalledTimes(2);
+      expect(warning.calls.allArgs().every(([message]) => message.includes("ursula.exe"))).toBe(
+        true,
+      );
       expect(launch).not.toHaveBeenCalled();
     });
 
@@ -680,7 +695,7 @@ describe("sofistik-tools", () => {
       const warning = spyOn(lumine.notifications, "addWarning");
       const launch = spyOn(lumine.shell, "openApplication");
 
-      expect(mainModule.treeOpenReport()).toEqual([undefined, undefined]);
+      expect(mainModule.openTreePaths("openReport")).toEqual([undefined, undefined]);
       expect(warning).toHaveBeenCalledOnceWith("Cannot open 2 missing SOFiSTiK files.", {
         detail: sources.map((filePath) => mainModule.changeExtension(filePath, ".cdb")).join("\n"),
       });
@@ -715,7 +730,7 @@ describe("sofistik-tools", () => {
       for (const name of ["x.erg", "x.prt", "x.$1", "x.#a", "x.cdb", "keep.dat"]) {
         fs.writeFileSync(path.join(dir, name), "x");
       }
-      const filter = mainModule.parseFilter("11");
+      const filter = mainModule.cleanupPattern({ level: 1 });
       const files = await require("../lib/ripgrep").findFiles(dir, filter);
       expect(files.sort()).toEqual(["x.#a", "x.$1", "x.erg", "x.prt"]);
     });
@@ -766,7 +781,7 @@ describe("sofistik-tools", () => {
 
     it("lists the manuals in the installation root, one row per manual", async () => {
       makeInstallation();
-      useLanguage("English");
+      useLanguage("en");
 
       await helpList.update();
 
@@ -789,7 +804,7 @@ describe("sofistik-tools", () => {
 
     it("follows the configured language", async () => {
       makeInstallation();
-      useLanguage("German");
+      useLanguage("de");
 
       await helpList.update();
 
@@ -801,14 +816,14 @@ describe("sofistik-tools", () => {
 
     it("recrawls when the language changes and reuses the crawl otherwise", async () => {
       makeInstallation();
-      useLanguage("English");
+      useLanguage("en");
       await helpList.update();
       const first = helpList.items;
 
       await helpList.update();
       expect(helpList.items).toBe(first);
 
-      useLanguage("German");
+      useLanguage("de");
       await helpList.update();
       expect(helpList.items).not.toBe(first);
       expect(helpList.items.find((item) => item.displayName === "AQUA").fileName).toBe(
@@ -835,7 +850,7 @@ describe("sofistik-tools", () => {
 
       // The service is deliberately manual, so a freshly activated tools
       // package has no provider until its first list operation asks for one.
-      const ensure = spyOn(mainModule, "ensureEnvironment").and.callFake(async () => {
+      const ensure = spyOn(mainModule, "ensureEnvironment").and.callFake(() => {
         useEnvironment(root);
         return mainModule.environmentProvider;
       });
@@ -867,7 +882,7 @@ describe("sofistik-tools", () => {
         fs.writeFileSync(path.join(dir, ...relative), "x");
       }
       spyOn(mainModule, "getSofPath").and.returnValue(dir);
-      useLanguage("English");
+      useLanguage("en");
 
       await mainModule.exampleList.update();
 
@@ -881,13 +896,13 @@ describe("sofistik-tools", () => {
   });
 
   describe("clean commands", () => {
-    it("expands numeric filters to glob patterns", () => {
-      const base = mainModule.parseFilter("11");
+    it("builds cleanup levels with explicit recursion", () => {
+      const base = mainModule.cleanupPattern({ level: 1 });
       expect(base.startsWith("*{.erg,")).toBe(true);
-      expect(mainModule.parseFilter("21")).toBe("**/" + base);
-      expect(mainModule.parseFilter("13")).toContain(".cdb");
-      expect(mainModule.parseFilter("14")).toContain("_csm.dat");
-      expect(mainModule.parseFilter("custom/*.tmp")).toBe("custom/*.tmp");
+      expect(mainModule.cleanupPattern({ level: 1, recursive: true })).toBe("**/" + base);
+      expect(mainModule.cleanupPattern({ level: 3 })).toContain(".cdb");
+      expect(mainModule.cleanupPattern({ level: 4 })).toContain("_csm.dat");
+      expect(mainModule.cleanupPattern("custom/*.tmp")).toBe("custom/*.tmp");
     });
 
     it("deletes matching files from the selected folders", async () => {
@@ -895,10 +910,9 @@ describe("sofistik-tools", () => {
       for (const name of ["x.erg", "x.prt", "keep.dat", "keep.cdb"]) {
         fs.writeFileSync(path.join(dir, name), "x");
       }
-      mainModule.cleanByPaths([dir], "11");
-      await waitFor(
-        () => !fs.existsSync(path.join(dir, "x.erg")) && !fs.existsSync(path.join(dir, "x.prt")),
-      );
+      const result = await mainModule.cleanByPaths([dir], { level: 1 });
+      expect(result.changed.length).toBe(2);
+      expect(result.failed).toEqual([]);
       expect(fs.readdirSync(dir).sort()).toEqual(["keep.cdb", "keep.dat"]);
     });
   });
@@ -949,11 +963,11 @@ describe("sofistik-tools", () => {
       const calls = captureViewer();
       await openBelowProg("AQUA");
 
-      useLanguage("English");
+      useLanguage("en");
       mainModule.currentHelp(1);
       expect(calls.pop().fileName).toBe("aqua_1.pdf");
 
-      useLanguage("German");
+      useLanguage("de");
       mainModule.currentHelp(1);
       expect(calls.pop().fileName).toBe("aqua_0.pdf");
     });
@@ -962,7 +976,7 @@ describe("sofistik-tools", () => {
       installManuals("beam.pdf", "beam_0.pdf");
       const calls = captureViewer();
       await openBelowProg("BEAM");
-      useLanguage("English");
+      useLanguage("en");
 
       mainModule.currentHelp(1);
 
@@ -975,7 +989,7 @@ describe("sofistik-tools", () => {
       installManuals("tunars_0.pdf");
       const calls = captureViewer();
       await openBelowProg("TUNARS");
-      useLanguage("English");
+      useLanguage("en");
 
       mainModule.currentHelp(1);
 
@@ -1033,11 +1047,8 @@ describe("sofistik-tools", () => {
     // The command catalogue keys its modules the way the input file writes them —
     // `WING`, not the `wingraf.pdf` its manual is named after.
     function useKeywordContext(commandsByModule) {
-      if (!mainModule.environmentProvider) useEnvironment("");
-      const provider = mainModule.environmentProvider;
-      mainModule.environmentProvider = {
-        ...provider,
-        getKeywordContext: () => ({
+      mainModule.dataProvider = {
+        forRelease: () => ({
           getModuleCommands: (moduleName) => commandsByModule[moduleName] || [],
         }),
       };
@@ -1047,7 +1058,7 @@ describe("sofistik-tools", () => {
       const dir = makeTempDir();
       fs.writeFileSync(path.join(dir, "aqua_1.pdf"), "x");
       spyOn(mainModule, "getSofPath").and.returnValue(dir);
-      useLanguage("English");
+      useLanguage("en");
       useKeywordContext({ AQUA: ["NORM", "MAT"] });
       const { editor } = await openSofistikEditor(text);
       editor.setCursorBufferPosition(cursor);
@@ -1057,7 +1068,7 @@ describe("sofistik-tools", () => {
     it("opens the manual at the command nearest above the cursor", async () => {
       await installManualAndEditor("+prog aqua\n  norm en\n  mat 1\n", [2, 6]);
       const calls = [];
-      mainModule.consumePdfView({
+      mainModule.owner.consumePdfView({
         getViewerByTag: () => null,
         open: (filePath, options) => calls.push(options),
         scrollToDestination: () => {},
@@ -1072,16 +1083,13 @@ describe("sofistik-tools", () => {
 
     it("requests manual keyword data for the same project year as the installation", async () => {
       await installManualAndEditor("@ SOFiSTiK 2022\n+prog aqua\nmat 1\n", [2, 5]);
-      const getKeywordContext = jasmine.createSpy("getKeywordContext").and.returnValue({
+      const forRelease = jasmine.createSpy("forRelease").and.returnValue({
         getModuleCommands: () => ["MAT"],
       });
-      mainModule.environmentProvider.getKeywordContext = getKeywordContext;
+      mainModule.dataProvider = { forRelease };
       spyOn(mainModule, "getViewer");
       mainModule.currentHelp(1);
-      const editor = lumine.workspace.getActiveTextEditor();
-      expect(getKeywordContext).toHaveBeenCalledWith(
-        mainModule.environmentContext(editor.getPath(), editor),
-      );
+      expect(forRelease).toHaveBeenCalledWith("2026", "en");
     });
 
     it("keeps the destination when the pdf-view service is not here yet", async () => {
@@ -1103,13 +1111,13 @@ describe("sofistik-tools", () => {
       expect(opened[0]).toBe(pdfURI(path.join(dir, "aqua_1.pdf"), "MAT"));
     });
 
-    it("opens without a destination when the resolver exposes no keyword data", async () => {
+    it("opens without a destination when the dataset lacks the selected module", async () => {
       await installManualAndEditor("+prog aqua\n  mat 1\n", [1, 6]);
       const calls = [];
       spyOn(mainModule, "getViewer").and.callFake((filePath, dest) =>
         calls.push({ filePath, dest }),
       );
-      mainModule.environmentProvider = { resolve: () => ({ version: "2026", language: "en" }) };
+      mainModule.dataProvider = { forRelease: () => ({ getModuleCommands: () => [] }) };
 
       expect(() => mainModule.currentHelp(1)).not.toThrow();
 
@@ -1123,7 +1131,7 @@ describe("sofistik-tools", () => {
       spyOn(mainModule, "getViewer").and.callFake((filePath, dest) =>
         calls.push({ filePath, dest }),
       );
-      mainModule.environmentProvider.getKeywordContext = () => null;
+      mainModule.dataProvider = { forRelease: () => null };
 
       expect(() => mainModule.currentHelp(1)).not.toThrow();
 
@@ -1139,7 +1147,7 @@ describe("sofistik-tools", () => {
 
     it("opens a new tagged viewer through the pdf-view service", () => {
       const calls = [];
-      mainModule.consumePdfView({
+      mainModule.owner.consumePdfView({
         getViewerByTag: () => null,
         open: (filePath, options) => calls.push({ filePath, options }),
         scrollToDestination: () => {},
@@ -1159,7 +1167,7 @@ describe("sofistik-tools", () => {
         getPath: () => "C:\\docs\\aqua.pdf",
         getURI: () => "C:\\docs\\aqua.pdf",
       };
-      mainModule.consumePdfView({
+      mainModule.owner.consumePdfView({
         getViewerByTag: (tag) => (tag === "SOFiSTiK" ? viewer : null),
         open: () => {},
         scrollToDestination: (target, dest) => scrolls.push({ target, dest }),
@@ -1176,7 +1184,7 @@ describe("sofistik-tools", () => {
         getPath: () => "C:\\docs\\ase.pdf",
         getURI: () => "C:\\docs\\ase.pdf",
       };
-      mainModule.consumePdfView({
+      mainModule.owner.consumePdfView({
         getViewerByTag: () => viewer,
         open: () => {},
         scrollToDestination: () => {},
@@ -1191,7 +1199,7 @@ describe("sofistik-tools", () => {
 
     it("uses distinct tags for separate viewers", () => {
       const calls = [];
-      mainModule.consumePdfView({
+      mainModule.owner.consumePdfView({
         getViewerByTag: () => null,
         open: (filePath, options) => calls.push(options),
         scrollToDestination: () => {},
@@ -1219,7 +1227,7 @@ describe("sofistik-tools", () => {
   describe("open-external service integration", () => {
     it("registers a handler that dispatches SOFiSTiK file types", () => {
       let handler = null;
-      const disposable = mainModule.consumeOpenExternal({
+      const disposable = mainModule.owner.consumeOpenExternal({
         registerHandler(options) {
           handler = options;
           return { dispose() {} };
@@ -1244,15 +1252,15 @@ describe("sofistik-tools", () => {
 
   describe("tree-view service integration", () => {
     it("uses the selected paths for tree commands", () => {
-      const disposable = mainModule.consumeTreeViewSelection({
+      const disposable = mainModule.owner.consumeTreeViewSelection({
         selectedPaths: () => ["C:\\proj\\a.dat", "C:\\proj\\b.dat"],
       });
       spyOn(mainModule, "openTeddy");
-      mainModule.treeOpenTeddy({ parameters: ["-0"] });
+      mainModule.openTreePaths("openTeddy", { parameters: ["-0"] });
       expect(mainModule.openTeddy).toHaveBeenCalledTimes(2);
       disposable.dispose();
       expect(mainModule.treeView).toBe(null);
-      expect(mainModule.treeOpenTeddy()).toBeUndefined();
+      expect(mainModule.openTreePaths("openTeddy")).toBeUndefined();
     });
   });
 });

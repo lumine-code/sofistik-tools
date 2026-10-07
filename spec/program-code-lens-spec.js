@@ -30,12 +30,12 @@ describe("SOFiSTiK program code lenses", () => {
     editors = [];
     jasmine.attachToDOM(lumine.workspace.getElement());
     await lumine.packages.activatePackage(path.join(__dirname, "..", "..", "language-sofistik"));
-    main = (await lumine.packages.activatePackage("sofistik-tools")).mainModule;
+    main = (await lumine.packages.activatePackage("sofistik-tools")).mainModule.ensureRuntime();
     lumine.config.unset("sofistik-tools.inlineActions");
     lumine.config.unset("sofistik-tools.inlineActions", { scopeSelector: ".source.sofistik" });
-    provider = main.provideCodeLens();
+    provider = main.owner.provideCodeLens();
     launch = spyOn(main, "createCalculationProcess").and.stub();
-    spyOn(main, "getSofPath").and.returnValue(directory);
+    spyOn(main, "getApplicationPath").and.callFake((name) => path.join(directory, name));
     lumine.notifications.clear();
   });
 
@@ -80,7 +80,7 @@ describe("SOFiSTiK program code lenses", () => {
     expect(lenses.map((lens) => lens.range[0][0])).toEqual([0, 22]);
     expect(lenses.every((lens) => lens.title === "Run")).toBe(true);
     expect(launch).not.toHaveBeenCalled();
-    expect(main.getSofPath).not.toHaveBeenCalled();
+    expect(main.getApplicationPath).not.toHaveBeenCalled();
   });
 
   it("declines mini editors and other grammars", async () => {
@@ -243,7 +243,9 @@ describe("SOFiSTiK program code lenses", () => {
       args: [editor.getPath(), "-run:2", "-e"],
       options: { cwd: path.dirname(editor.getPath()) },
     });
-    expect(main.getSofPath).toHaveBeenCalledWith(null, editor.getPath(), editor);
+    const lookup = main.getApplicationPath.calls.mostRecent().args;
+    expect(lookup[0]).toBe("wps.exe");
+    expect(lookup[1].version).toBe("2026");
     expect(editor.getCursorBufferPosition()).toEqual(position);
     expect(lumine.workspace.getActiveTextEditor()).toBe(other);
   });
@@ -298,7 +300,7 @@ describe("SOFiSTiK program code lenses", () => {
     finishSave();
     await running;
     expect(launch).not.toHaveBeenCalled();
-    expect(main.getSofPath).not.toHaveBeenCalled();
+    expect(main.getApplicationPath).not.toHaveBeenCalled();
   });
 
   it("keeps a pending Run cancelled after toggling off and back on during save", async () => {
@@ -316,7 +318,7 @@ describe("SOFiSTiK program code lenses", () => {
     finishSave();
     await running;
     expect(launch).not.toHaveBeenCalled();
-    expect(main.getSofPath).not.toHaveBeenCalled();
+    expect(main.getApplicationPath).not.toHaveBeenCalled();
   });
 
   it("propagates a failed save without launching", async () => {
@@ -343,7 +345,7 @@ describe("SOFiSTiK program code lenses", () => {
 
   it("uses the existing missing-installation notification without attempting a process", async () => {
     const editor = await openEditor("+PROG AQUA\nEND\n");
-    main.getSofPath.and.callFake(() => {
+    main.getApplicationPath.and.callFake(() => {
       lumine.notifications.addError("SOFiSTiK 2026 is not installed.");
       return undefined;
     });

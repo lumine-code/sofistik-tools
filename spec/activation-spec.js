@@ -22,12 +22,11 @@ describe("sofistik-tools bootstrap activation", () => {
     }
   });
 
-  it("keeps all select-list models out of activation", () => {
+  it("keeps environment, datasets and list models out of bootstrap", () => {
     expect(lumine.packages.getPackageLifecycleState(PACKAGE_NAME)).toBe("active");
-    for (const list of [mainModule.helpList, mainModule.exampleList, mainModule.versionList]) {
-      expect(list.selectListHost).toBeNull();
-      expect(list.selectList).toBeNull();
-    }
+    expect(mainModule.runtime).toBeNull();
+    mainModule.provideCodeLens();
+    expect(mainModule.runtime).toBeNull();
   });
 
   it("registers the list commands synchronously", () => {
@@ -49,18 +48,17 @@ describe("sofistik-tools bootstrap activation", () => {
   ]) {
     it(`materializes only ${property} when ${command} is used and reuses it`, async () => {
       if (property !== "versionList") {
-        spyOn(mainModule, "ensureEnvironment").and.resolveTo(null);
-        spyOn(mainModule, "getSofPath").and.returnValue(undefined);
+        spyOn(mainModule.ensureRuntime(), "getSofPath").and.returnValue(undefined);
       }
 
       await lumine.commands.dispatch(workspaceElement, command);
 
-      const requested = mainModule[property];
+      const requested = mainModule.runtime[property];
       const firstHost = requested.selectListHost;
       expect(firstHost).not.toBeNull();
       expect(firstHost.isVisible()).toBe(true);
       for (const other of ["helpList", "exampleList", "versionList"]) {
-        if (other !== property) expect(mainModule[other].selectListHost).toBeNull();
+        if (other !== property) expect(mainModule.runtime[other].selectListHost).toBeNull();
       }
 
       await lumine.commands.dispatch(workspaceElement, command);
@@ -70,14 +68,13 @@ describe("sofistik-tools bootstrap activation", () => {
   }
 
   it("does not materialize a list when its hidden cache is refreshed", async () => {
-    spyOn(mainModule, "ensureEnvironment").and.resolveTo(null);
-    spyOn(mainModule, "getSofPath").and.returnValue(undefined);
+    spyOn(mainModule.ensureRuntime(), "getSofPath").and.returnValue(undefined);
 
     await lumine.commands.dispatch(workspaceElement, "sofistik-tools:cache-help");
     await lumine.commands.dispatch(workspaceElement, "sofistik-tools:cache-examples");
 
-    expect(mainModule.helpList.selectListHost).toBeNull();
-    expect(mainModule.exampleList.selectListHost).toBeNull();
+    expect(mainModule.runtime.helpList.selectListHost).toBeNull();
+    expect(mainModule.runtime.exampleList.selectListHost).toBeNull();
   });
 
   it("deactivates both before and after a list has been materialized", async () => {
@@ -86,11 +83,11 @@ describe("sofistik-tools bootstrap activation", () => {
     await lumine.packages.activatePackage(PACKAGE_NAME);
     mainModule = pack.mainModule;
     await lumine.commands.dispatch(workspaceElement, "sofistik-tools:change-version");
-    const host = mainModule.versionList.selectListHost;
+    const host = mainModule.runtime.versionList.selectListHost;
 
     await expectAsync(lumine.packages.deactivatePackage(PACKAGE_NAME)).toBeResolved();
     expect(host.isDestroyed()).toBe(true);
-    expect(mainModule.versionList.selectListHost).toBeNull();
-    expect(mainModule.versionList.selectList).toBeNull();
+    expect(mainModule.runtime.versionList.selectListHost).toBeNull();
+    expect(mainModule.runtime.versionList.selectList).toBeNull();
   });
 });

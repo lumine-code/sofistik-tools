@@ -9,7 +9,7 @@ describe("sofistik-tools item actions", () => {
   beforeEach(async () => {
     jasmine.attachToDOM(lumine.views.getView(lumine.workspace));
     const pack = await lumine.packages.activatePackage("sofistik-tools");
-    mainModule = pack.mainModule;
+    mainModule = pack.mainModule.ensureRuntime();
     helpList = mainModule.helpList;
     helpList.ensureSelectList();
   });
@@ -77,7 +77,7 @@ describe("sofistik-tools item actions", () => {
   it("passes the parsed destination snapshot to the primary action", async () => {
     sofDir = fs.mkdtempSync(path.join(os.tmpdir(), "sofistik-item-actions-"));
     const item = { fileName: "aqua_1.pdf", displayName: "AQUA", suffix: "" };
-    helpList.sofPath = sofDir;
+    item.filePath = path.join(sofDir, item.fileName);
     helpList.items = [item];
     await helpList.selectList.setItems([item]);
     await helpList.selectList.setQuery("aqua:grp 1");
