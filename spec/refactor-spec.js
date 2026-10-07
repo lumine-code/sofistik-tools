@@ -118,6 +118,15 @@ describe("SOFiSTiK operation boundaries", () => {
     expect(editor.getText()).toBe("+SYS echo\n+APPLY other.dat\n");
   });
 
+  it("runs the containing program when the cursor follows a CHAPTER heading", async () => {
+    install("2026");
+    const editor = await openSource("model.dat", "+PROG AQUA\nCHAPTER materials\nMAT NO 1\nEND\n");
+    editor.setCursorBufferPosition([2, 5]);
+    const launch = spyOn(runtime, "createCalculationProcess");
+    await lumine.commands.dispatch(editor.getElement(), "sofistik-tools:calculation-wps-current");
+    expect(launch.calls.mostRecent().args[0].args).toEqual([editor.getPath(), "-run:1", "-e"]);
+  });
+
   it("cancels a full-file calculation when its activation ends during save", async () => {
     install("2026");
     const editor = await openSource("model.dat", "+PROG AQUA\nEND\n");
@@ -197,6 +206,77 @@ describe("SOFiSTiK operation boundaries", () => {
     await lumine.commands.dispatch(editor.getElement(), "sofistik-tools:calculation-wps");
     expect(resolve).not.toHaveBeenCalled();
     expect(warnings()).toContain("Not a SOFiSTiK file");
+  });
+
+  it("ignores an invalid definition beside an unrelated tree selection when calculating", async () => {
+    install("2026");
+    const editor = await openSource("good/model.dat", "+PROG AQUA\nEND\n");
+    const unrelated = await openSource("bad/model.dat", "+PROG ASE\nEND\n");
+    fs.writeFileSync(path.join(directory, "bad", "sofistik.def"), "SOF_EDITION=invalid\n");
+    const edge = main.consumeTreeViewSelection({ selectedPaths: () => [unrelated.getPath()] });
+    const launch = spyOn(runtime, "createCalculationProcess");
+    try {
+      await lumine.commands.dispatch(editor.getElement(), "sofistik-tools:calculation-wps");
+      expect(launch.calls.mostRecent().args[0].args).toEqual([editor.getPath()]);
+    } finally {
+      edge.dispose();
+    }
+  });
+
+  it("ignores a background editor's invalid definition when launching a tree output", async () => {
+    const installPath = install("2026", ["wps.exe", "wingraf.exe"]);
+    const editor = await openSource("selected/model.dat", "+PROG AQUA\nEND\n");
+    await openSource("background/model.dat", "+PROG ASE\nEND\n");
+    fs.writeFileSync(path.join(directory, "background", "sofistik.def"), "SOF_EDITION=invalid\n");
+    const edge = main.consumeTreeViewSelection({ selectedPaths: () => [editor.getPath()] });
+    const tree = document.createElement("div");
+    tree.className = "tree-view";
+    lumine.workspace.getElement().appendChild(tree);
+    const launch = spyOn(lumine.shell, "openApplication").and.resolveTo(42);
+    try {
+      await lumine.commands.dispatch(tree, "sofistik-tools:open-wingraf");
+      expect(launch.calls.mostRecent().args).toEqual([
+        path.join(installPath, "wingraf.exe"),
+        [path.join(directory, "selected", "model.gra")],
+        { cwd: path.join(directory, "selected") },
+      ]);
+    } finally {
+      tree.remove();
+      edge.dispose();
+    }
+  });
+
+  it("edits programs and cleans selected folders without resolving any environment", async () => {
+    const editor = await openSource("model.dat", "+PROG AQUA\nEND\n");
+    fs.writeFileSync(path.join(directory, "sofistik.def"), "SOF_EDITION=invalid\n");
+    const generated = path.join(directory, "model.erg");
+    fs.writeFileSync(generated, "");
+    const edge = main.consumeTreeViewSelection({ selectedPaths: () => [directory] });
+    const resolve = spyOn(runtime.ensureEnvironment(), "resolve").and.throwError(
+      "Unexpected environment lookup",
+    );
+    try {
+      await lumine.commands.dispatch(editor.getElement(), "sofistik-tools:program-all-off");
+      expect(editor.getText()).toBe("-PROG AQUA\nEND\n");
+      await lumine.commands.dispatch(editor.getElement(), "sofistik-tools:clean-1");
+      expect(fs.existsSync(generated)).toBe(false);
+      expect(resolve).not.toHaveBeenCalled();
+    } finally {
+      edge.dispose();
+    }
+  });
+
+  it("passes Teddy cursor arguments as strings through the GUI launcher", async () => {
+    const installPath = install("2026", ["wps.exe", "ted.exe"]);
+    const editor = await openSource("model.dat", "+PROG AQUA\nEND\n");
+    editor.setCursorBufferPosition([1, 0]);
+    const launch = spyOn(lumine.shell, "openApplication").and.resolveTo(42);
+    await lumine.commands.dispatch(editor.getElement(), "sofistik-tools:open-teddy");
+    expect(launch.calls.mostRecent().args).toEqual([
+      path.join(installPath, "ted.exe"),
+      [editor.getPath(), "-0", "2"],
+      { cwd: directory },
+    ]);
   });
 
   it("loads German examples for the canonical language code and snapshots item paths", async () => {

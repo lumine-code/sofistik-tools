@@ -29,7 +29,7 @@ Declare additional calculation files with one directive per line:
 
 Paths are relative to the declaring file. Duplicate paths run once. Add `@ only-children` to calculate only the listed children; the declaring source still saves first. All open sources in the batch save before its first calculation starts. Each process runs with its source directory as the working directory.
 
-Calculation WPS Current uses the nearest calculation directive above the captured cursor. PROG, SYS, APPLY and CHAPTER are recognized outside comments, strings, macro definitions and prose blocks. An inactive directive or multiple calculation directives on the same physical line must be corrected before running one.
+Calculation WPS Current uses the nearest PROG, SYS or APPLY directive above the captured cursor, outside comments, strings, macro definitions and prose blocks. A CHAPTER heading does not change the selected calculation program. An inactive directive or multiple calculation directives on the same physical line must be corrected before running one.
 
 Code Lens offers Run above complete active `+PROG` headers. It uses the clicked file and row without moving the cursor. An old action refuses to run after its source changes; fetch a fresh action by allowing Code Lens to update. A file declaring `@ only-children` cannot run an individual program.
 

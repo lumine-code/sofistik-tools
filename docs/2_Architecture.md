@@ -26,7 +26,7 @@ SOFiSTiK Tools composes environment discovery, keyword datasets and editor workf
 
 `@lumine-code/sofistik-data` owns release and language datasets. Manual destinations use `SofistikDataProvider.forRelease(environment.version, environment.language)`. The keyword provider receives the same resolved year and language as the installation lookup. It does not select a second project environment.
 
-Every operation captures identities before its first asynchronous boundary. Installation capabilities are checked for the requested application before launching. Changing an adjacent definition while a save is pending changes a later operation, not the environment already chosen for that calculation.
+Each feature resolves only its effective file targets before its first asynchronous boundary. An unrelated tree selection cannot change an editor operation, and a background editor cannot change a tree operation. Source editing and maintenance require no environment validation. Installation capabilities are checked for the requested application before launching. Changing an adjacent definition while a save is pending changes a later operation, not the environment already chosen for that calculation.
 
 ## Ownership and teardown
 
