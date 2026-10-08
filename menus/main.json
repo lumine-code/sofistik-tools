@@ -43,22 +43,8 @@
                   "command": "sofistik-tools:toggle-help"
                 },
                 {
-                  "label": "Reindex Manuals",
-                  "command": "sofistik-tools:cache-help"
-                },
-                {
-                  "type": "separator"
-                },
-                {
                   "label": "Browse Examples…",
                   "command": "sofistik-tools:toggle-examples"
-                },
-                {
-                  "label": "Reindex Examples",
-                  "command": "sofistik-tools:cache-examples"
-                },
-                {
-                  "type": "separator"
                 },
                 {
                   "label": "Open cdbase.chm",

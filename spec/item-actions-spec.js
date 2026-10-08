@@ -57,8 +57,9 @@ describe("sofistik-tools item actions", () => {
 
     const cacheHelp = byCommand.get("sofistik-tools:cache-help");
     expect(cacheHelp.description).toBe("Index the manuals again after installing another release.");
-    expect(cacheHelp.keystrokes).toEqual([]);
+    expect(cacheHelp.keystrokes).toEqual(["f5"]);
     expect(cacheHelp.context).toBe("dialog");
+    expect(cacheHelp.dispatch).toBe("local");
 
     // Chrome and global commands stay out.
     expect(byCommand.has("core:confirm")).toBe(false);
@@ -73,6 +74,92 @@ describe("sofistik-tools item actions", () => {
       "sofistik-tools:cache-help",
     ]);
   });
+
+  it("offers a local rebuild action even when the examples list is empty", async () => {
+    const list = mainModule.exampleList;
+    list.ensureSelectList();
+    spyOn(mainModule, "getSofPath").and.returnValue(undefined);
+    await list.selectListHost.show();
+    list.selectList.setItems([]);
+
+    const actions = list.selectList.getAvailableActions();
+    expect(actions.map((action) => action.command)).toEqual(["sofistik-tools:cache-examples"]);
+    expect(actions[0].description).toBe(
+      "Index the examples again after installing another release.",
+    );
+    expect(actions[0].keystrokes).toEqual(["f5"]);
+    expect(actions[0].context).toBe("dialog");
+    expect(actions[0].dispatch).toBe("local");
+  });
+
+  for (const { property, command, files } of [
+    {
+      property: "helpList",
+      command: "sofistik-tools:cache-help",
+      files: ["aqua_1.pdf", "ase_1.pdf"],
+    },
+    {
+      property: "exampleList",
+      command: "sofistik-tools:cache-examples",
+      files: [path.join("aqua.dat", "one.dat"), path.join("ase.dat", "two.dat")],
+    },
+  ]) {
+    it(`rebuilds ${property} in place with its captured installation`, async () => {
+      const list = mainModule[property];
+      const operation = {
+        resolveEnvironment: jasmine.createSpy("resolveEnvironment"),
+        getSofPath: () => os.tmpdir(),
+        getLanguage: () => "en",
+      };
+      const scan = spyOn(list.index, "scan").and.resolveTo([files[0]]);
+      spyOn(mainModule, "operation").and.throwError("Unexpected new installation context");
+      await list.toggle(operation);
+      await list.selectList.setQuery("a");
+      const selected = list.selectList.getSelectedItem();
+      scan.and.resolveTo(files);
+
+      await list.selectList.runAction(command);
+
+      expect(scan).toHaveBeenCalledTimes(2);
+      expect(list.items.map((item) => item.fileName).sort()).toEqual([...files].sort());
+      expect(list.operation).toBe(operation);
+      expect(list.selectListHost.isVisible()).toBe(true);
+      expect(list.selectList.getQuery()).toBe("a");
+      expect(list.selectList.getSelectedItem().fileName).toBe(selected.fileName);
+    });
+
+    it(`uses F5 only inside ${property}'s query editor`, async () => {
+      const list = mainModule[property];
+      const operation = {
+        resolveEnvironment: () => {},
+        getSofPath: () => os.tmpdir(),
+        getLanguage: () => "en",
+      };
+      spyOn(list.index, "scan").and.resolveTo([files[0]]);
+      await list.toggle(operation);
+      const refresh = spyOn(list, "refresh").and.callThrough();
+      const target = list.selectList.getQueryEditor().getElement();
+      const event = new KeyboardEvent("keydown", {
+        key: "F5",
+        code: "F5",
+        bubbles: true,
+        cancelable: true,
+      });
+      Object.defineProperty(event, "target", { value: target });
+
+      lumine.keymaps.handleKeyboardEvent(event);
+
+      await conditionPromise(() => !list.selectList.isActionPending(command));
+      expect(refresh).toHaveBeenCalledTimes(1);
+      expect(list.selectListHost.isVisible()).toBe(true);
+      expect(
+        lumine.keymaps.findKeyBindings({
+          target: lumine.workspace.getElement(),
+          command,
+        }),
+      ).toEqual([]);
+    });
+  }
 
   it("passes the parsed destination snapshot to the primary action", async () => {
     sofDir = fs.mkdtempSync(path.join(os.tmpdir(), "sofistik-item-actions-"));

@@ -15,8 +15,12 @@
     "f9": "sofistik-tools:open-report"
   },
   ".sofistik-tools.help-list lumine-text-editor[mini]": {
+    "f5": "sofistik-tools:cache-help",
     // alt-f12 is the ecosystem's "hand this to the system" key, which is what
     // opening the manual in the system PDF viewer is.
     "alt-f12": "sofistik-tools:open-ex"
+  },
+  ".sofistik-tools.example-list lumine-text-editor[mini]": {
+    "f5": "sofistik-tools:cache-examples"
   }
 }

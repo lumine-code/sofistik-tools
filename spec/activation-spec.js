@@ -29,15 +29,15 @@ describe("sofistik-tools bootstrap activation", () => {
     expect(mainModule.runtime).toBeNull();
   });
 
-  it("registers the list commands synchronously", () => {
+  it("registers list openers synchronously and keeps cache commands local", () => {
     const commands = lumine.commands
       .findCommands({ target: workspaceElement })
       .map((command) => command.name);
 
     expect(commands).toContain("sofistik-tools:toggle-help");
-    expect(commands).toContain("sofistik-tools:cache-help");
+    expect(commands).not.toContain("sofistik-tools:cache-help");
     expect(commands).toContain("sofistik-tools:toggle-examples");
-    expect(commands).toContain("sofistik-tools:cache-examples");
+    expect(commands).not.toContain("sofistik-tools:cache-examples");
     expect(commands).toContain("sofistik-tools:change-version");
   });
 
@@ -67,14 +67,10 @@ describe("sofistik-tools bootstrap activation", () => {
     });
   }
 
-  it("does not materialize a list when its hidden cache is refreshed", async () => {
-    spyOn(mainModule.ensureRuntime(), "getSofPath").and.returnValue(undefined);
-
-    await lumine.commands.dispatch(workspaceElement, "sofistik-tools:cache-help");
-    await lumine.commands.dispatch(workspaceElement, "sofistik-tools:cache-examples");
-
-    expect(mainModule.runtime.helpList.selectListHost).toBeNull();
-    expect(mainModule.runtime.exampleList.selectListHost).toBeNull();
+  it("does not handle cache commands from the workspace", () => {
+    expect(lumine.commands.dispatch(workspaceElement, "sofistik-tools:cache-help")).toBeNull();
+    expect(lumine.commands.dispatch(workspaceElement, "sofistik-tools:cache-examples")).toBeNull();
+    expect(mainModule.runtime).toBeNull();
   });
 
   it("deactivates both before and after a list has been materialized", async () => {

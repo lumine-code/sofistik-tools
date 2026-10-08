@@ -68,9 +68,7 @@ Commands available in `lumine-workspace`. Each uses the editor that dispatched i
 Commands available in `lumine-workspace`:
 
 - `sofistik-tools:toggle-help`: open help selection list,
-- `sofistik-tools:cache-help`: rebuild help cache,
 - `sofistik-tools:toggle-examples`: open examples selection list,
-- `sofistik-tools:cache-examples`: rebuild examples cache,
 - `sofistik-tools:change-version`: change SOFiSTiK version,
 - `sofistik-tools:ifc-export`: open IFC export dialog,
 - `sofistik-tools:ifc-import`: open IFC import dialog,
@@ -82,6 +80,13 @@ Actions shown for `.sofistik-tools.help-list`:
 - `sofistik-tools:open-in`: open the selected manual in the editor,
 - `sofistik-tools:open-ex`: open the selected manual in the system PDF viewer,
 - `sofistik-tools:cache-help`: rebuild the help cache.
+
+Actions shown for `.sofistik-tools.example-list`:
+
+- `sofistik-tools:open-example`: open the selected example in the editor,
+- `sofistik-tools:cache-examples`: rebuild the examples cache.
+
+Cache actions keep their list open and rescan its selected installation.
 
 Commands available in `lumine-workspace`, acting on the tree view selection:
 
