@@ -6,13 +6,15 @@
     "ctrl-f5": "sofistik-tools:calculation-wps-immediately",
     "shift-f5": "sofistik-tools:calculation-wps-current",
     "alt-f5": "sofistik-tools:calculation-sps",
-    "f6": "sofistik-tools:current-help",
-    "alt-f6": "sofistik-tools:separately-help",
     "f7": "sofistik-tools:open-animator",
     "alt-f7": "sofistik-tools:open-animator-2018",
     "f8": "sofistik-tools:open-wingraf",
     "ctrl-f8": "sofistik-tools:open-result-viewer",
     "f9": "sofistik-tools:open-report"
+  },
+  "lumine-text-editor[data-grammar~=\"sofistik\"]:not([mini])": {
+    "f6": "sofistik-tools:current-help",
+    "alt-f6": "sofistik-tools:separately-help"
   },
   ".sofistik-tools.help-list lumine-text-editor[mini]": {
     "f5": "sofistik-tools:cache-help",

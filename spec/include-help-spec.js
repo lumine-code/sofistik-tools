@@ -86,6 +86,31 @@ describe("SOFiSTiK include help", () => {
         { manual: `${module.toLowerCase()}_1.pdf`, destination: MODULES[module], reuse: false },
       ]);
     });
+
+    it(`resolves F6 and Alt-F6 in ${filename} without calculation bindings`, async () => {
+      const editor = await openSource(filename, `${MODULES[module]} 1\n`);
+      editor.setCursorBufferPosition([0, Infinity]);
+      const target = lumine.views.getView(editor);
+      for (const altKey of [false, true]) {
+        const event = new KeyboardEvent("keydown", {
+          key: "F6",
+          code: "F6",
+          altKey,
+          bubbles: true,
+          cancelable: true,
+        });
+        Object.defineProperty(event, "target", { value: target });
+        lumine.keymaps.handleKeyboardEvent(event);
+      }
+
+      expect(calls()).toEqual([
+        { manual: `${module.toLowerCase()}_1.pdf`, destination: MODULES[module], reuse: true },
+        { manual: `${module.toLowerCase()}_1.pdf`, destination: MODULES[module], reuse: false },
+      ]);
+      expect(
+        lumine.keymaps.findKeyBindings({ target, command: "sofistik-tools:calculation-wps" }),
+      ).toEqual([]);
+    });
   }
 
   for (const header of ["+PROG SOFILOAD", "$PROG SOFILOAD", "-PROG SOFILOAD"]) {
