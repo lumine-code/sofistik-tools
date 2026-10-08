@@ -6,7 +6,7 @@ Commands and integrations for SOFiSTiK structural analysis workflows.
 
 ## Features
 
-- **Help system**: open PDF manuals in [pdf-view](https://github.com/lumine-code/pdf-view) with jump-to-command support.
+- **Help system**: open PDF manuals in [pdf-view](https://github.com/lumine-code/pdf-view) with jump-to-command support for programs and include fragments.
 - **Calculation**: run WPS/SPS directly from the editor.
 - **Inline Run**: run an active PROG block in WPS from its Code Lens action, independently of the cursor position.
 - **File handlers**: open CDB, PLB, GRA files with double-click.
