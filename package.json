@@ -21,7 +21,8 @@
   "specPackages": [
     "language-sofistik",
     "language-text",
-    "code-lens"
+    "code-lens",
+    "open-external"
   ],
   "main": "./lib/main",
   "files": [

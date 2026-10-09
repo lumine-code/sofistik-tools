@@ -80,10 +80,11 @@ describe("sofistik-tools bootstrap activation", () => {
     mainModule = pack.mainModule;
     await lumine.commands.dispatch(workspaceElement, "sofistik-tools:change-version");
     const host = mainModule.runtime.versionList.selectListHost;
+    const retiredRuntime = mainModule.runtime;
 
     await expectAsync(lumine.packages.deactivatePackage(PACKAGE_NAME)).toBeResolved();
     expect(host.isDestroyed()).toBe(true);
-    expect(mainModule.runtime.versionList.selectListHost).toBeNull();
-    expect(mainModule.runtime.versionList.selectList).toBeNull();
+    expect(retiredRuntime.versionList.selectListHost).toBeNull();
+    expect(retiredRuntime.versionList.selectList).toBeNull();
   });
 });
