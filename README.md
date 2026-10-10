@@ -125,7 +125,7 @@ Each `clean-n` command also has a `clean-n-recursively` variant that descends in
 
 Place `sofistik.def` beside a saved source to declare `SOF_VERSION`, `SOF_LANGUAGE` (`EN` or `DE`) and `SOF_EDITION` (`professional` or `educational`). Files in different directories resolve independently. Without an adjacent declared year, the newest installed release applies, then the newest bundled dataset for offline keyword data. Every application checks its own executable, so a CDB-only installation cannot start a calculation.
 
-Calculations capture their editor and environments before saving. Parent and open child buffers save before the first launch; a source change or package deactivation while saving prevents the pending action. Manuals and examples keep the selected installation's paths even if another project takes focus.
+Calculations capture their editor and environments before saving. Parent and open child buffers save before the first launch; save hooks may update the source, and calculations use the saved files. A path change, unsaved edit or package deactivation while saving prevents the pending action. Manuals and examples keep the selected installation's paths even if another project takes focus.
 
 See [Workflows](docs/1_Workflows.md) for child calculations, program boundaries, manual navigation and maintenance, and [Architecture](docs/2_Architecture.md) for module ownership and validation.
 

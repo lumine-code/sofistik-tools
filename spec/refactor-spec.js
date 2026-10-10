@@ -144,33 +144,102 @@ describe("SOFiSTiK operation boundaries", () => {
     expect(launch).not.toHaveBeenCalled();
   });
 
-  it("refuses a full-file calculation whose save changes the source", async () => {
-    install("2026");
-    const editor = await openSource("model.dat", "+PROG AQUA\nEND\n");
-    const launch = spyOn(runtime, "createCalculationProcess");
-    spyOn(editor, "save").and.callFake(async () => editor.setText("+PROG ASE\nEND\n"));
+  it("runs a full-file calculation after save hooks normalize the source on disk", async () => {
+    const installPath = install("2026");
+    const normalized = "+PROG AQUA\nEND\n";
+    const editor = await openSource("model.dat", "+PROG AQUA  \nEND");
+    editor.getBuffer().onWillSave(() => editor.getBuffer().setTextViaDiff(normalized));
+    const save = spyOn(editor, "save").and.callThrough();
+    const launch = spyOn(runtime, "createCalculationProcess").and.callFake(() => {
+      expect(fs.readFileSync(editor.getPath(), "utf8")).toBe(normalized);
+      expect(editor.getBuffer().getFileState()).toBe("unmodified");
+    });
     await lumine.commands.dispatch(editor.getElement(), "sofistik-tools:calculation-wps");
-    expect(launch).not.toHaveBeenCalled();
-    expect(warnings()).toContain("changed while saving");
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(launch).toHaveBeenCalledOnceWith({
+      command: path.join(installPath, "wps.exe"),
+      args: [editor.getPath()],
+      options: { cwd: path.dirname(editor.getPath()) },
+    });
+    expect(warnings()).toBe("");
   });
 
-  it("saves open children and retains each child's environment chosen before parent save", async () => {
+  it("runs the current program from disk after save hooks normalize the source", async () => {
+    const installPath = install("2026");
+    const normalized = "! title\n+PROG AQUA\nEND\n";
+    const editor = await openSource("model.dat", "! title  \n+PROG AQUA  \nEND");
+    editor.setCursorBufferPosition([2, 0]);
+    editor.getBuffer().onWillSave(() => editor.getBuffer().setTextViaDiff(normalized));
+    const save = spyOn(editor, "save").and.callThrough();
+    const launch = spyOn(runtime, "createCalculationProcess").and.callFake(() => {
+      expect(fs.readFileSync(editor.getPath(), "utf8")).toBe(normalized);
+      expect(editor.getBuffer().getFileState()).toBe("unmodified");
+    });
+    await lumine.commands.dispatch(editor.getElement(), "sofistik-tools:calculation-wps-current");
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(launch).toHaveBeenCalledOnceWith({
+      command: path.join(installPath, "wps.exe"),
+      args: [editor.getPath(), "-run:2", "-e"],
+      options: { cwd: path.dirname(editor.getPath()) },
+    });
+    expect(warnings()).toBe("");
+  });
+
+  it("follows the current program when a save hook inserts a comment above it", async () => {
+    const installPath = install("2026");
+    const original = "+PROG AQUA\nEND\n+PROG ASE\nEND\n";
+    const editor = await openSource("model.dat", original);
+    editor.setCursorBufferPosition([1, 0]);
+    editor.getBuffer().onWillSave(() => editor.getBuffer().insert([0, 0], "! saved header\n"));
+    const launch = spyOn(runtime, "createCalculationProcess").and.callFake(() => {
+      expect(fs.readFileSync(editor.getPath(), "utf8")).toBe(`! saved header\n${original}`);
+    });
+    await lumine.commands.dispatch(editor.getElement(), "sofistik-tools:calculation-wps-current");
+    expect(launch).toHaveBeenCalledOnceWith({
+      command: path.join(installPath, "wps.exe"),
+      args: [editor.getPath(), "-run:2", "-e"],
+      options: { cwd: path.dirname(editor.getPath()) },
+    });
+    expect(warnings()).toBe("");
+  });
+
+  it("does not launch when an after-save edit leaves the source unsaved", async () => {
+    install("2026");
+    const saved = "+PROG AQUA\nEND\n";
+    const editor = await openSource("model.dat", saved);
+    editor.getBuffer().onDidSave(() => editor.setText("+PROG AQUA\nHEAD unsaved\nEND\n"));
+    const launch = spyOn(runtime, "createCalculationProcess");
+    await lumine.commands.dispatch(editor.getElement(), "sofistik-tools:calculation-wps");
+    expect(launch).not.toHaveBeenCalled();
+    expect(fs.readFileSync(editor.getPath(), "utf8")).toBe(saved);
+    expect(editor.getBuffer().getFileState()).toBe("modified");
+    expect(warnings()).toBe("");
+  });
+
+  it("normalizes parent and open child saves and retains each child's chosen environment", async () => {
     const parentInstall = install("2024");
     const childInstall = install("2026");
+    const normalizedChild = "+PROG ASE\nHEAD edited\nEND\n";
+    const normalizedParent = "@ child:children/child.dat\n+PROG AQUA\nEND\n";
     const child = await openSource("children/child.dat", "+PROG ASE\nEND\n");
     fs.writeFileSync(path.join(directory, "children", "sofistik.def"), "SOF_VERSION=2026\n");
-    child.setText("+PROG ASE\nHEAD edited\nEND\n");
-    const parent = await openSource("parent.dat", "@ child:children/child.dat\n+PROG AQUA\nEND\n");
+    child.setText("+PROG ASE  \nHEAD edited  \nEND");
+    child.getBuffer().onWillSave(() => child.getBuffer().setTextViaDiff(normalizedChild));
+    const parent = await openSource("parent.dat", "@ child:children/child.dat\n+PROG AQUA  \nEND");
+    parent.getBuffer().onWillSave(() => parent.getBuffer().setTextViaDiff(normalizedParent));
     fs.writeFileSync(path.join(directory, "sofistik.def"), "SOF_VERSION=2024\n");
     const save = spyOn(child, "save").and.callThrough();
-    const launch = spyOn(runtime, "createCalculationProcess");
+    const launch = spyOn(runtime, "createCalculationProcess").and.callFake(() => {
+      expect(fs.readFileSync(parent.getPath(), "utf8")).toBe(normalizedParent);
+      expect(fs.readFileSync(child.getPath(), "utf8")).toBe(normalizedChild);
+    });
     await lumine.commands.dispatch(parent.getElement(), "sofistik-tools:calculation-wps");
     expect(save).toHaveBeenCalledTimes(1);
     expect(launch.calls.allArgs().map(([task]) => [task.command, task.args[0]])).toEqual([
       [path.join(parentInstall, "wps.exe"), parent.getPath()],
       [path.join(childInstall, "wps.exe"), child.getPath()],
     ]);
-    expect(fs.readFileSync(child.getPath(), "utf8")).toContain("HEAD edited");
+    expect(warnings()).toBe("");
   });
 
   it("does not infer a calculation executable from a CDB-only installation", async () => {

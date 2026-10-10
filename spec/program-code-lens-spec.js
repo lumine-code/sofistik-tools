@@ -259,13 +259,57 @@ describe("SOFiSTiK program code lenses", () => {
     expect(warningText()).toContain("Wait for Code Lens to refresh");
   });
 
-  it("refuses a lens when saving changes the text", async () => {
-    const editor = await openEditor("+PROG AQUA\nEND\n");
+  it("awaits save hooks and runs normalized text from disk without a warning", async () => {
+    const original = "! title  \n+PROG AQUA  \nEND";
+    const normalized = "! title\n+PROG AQUA\nEND\n";
+    const editor = await openEditor(original);
     const lens = (await provider.codeLenses(editor))[0];
-    spyOn(editor, "save").and.callFake(async () => editor.setText("+PROG ASE\nEND\n"));
-    await lens.execute();
+    let finishSave, savingStarted;
+    const saving = new Promise((resolve) => {
+      savingStarted = resolve;
+    });
+    editor.getBuffer().onWillSave(() => {
+      editor.getBuffer().setTextViaDiff(normalized);
+      savingStarted();
+      return new Promise((resolve) => {
+        finishSave = resolve;
+      });
+    });
+    const save = spyOn(editor, "save").and.callThrough();
+    launch.and.callFake(() => {
+      expect(fs.readFileSync(editor.getPath(), "utf8")).toBe(normalized);
+      expect(editor.getBuffer().getFileState()).toBe("unmodified");
+    });
+    const running = lens.execute();
+    await saving;
+    expect(save).toHaveBeenCalledTimes(1);
     expect(launch).not.toHaveBeenCalled();
-    expect(warningText()).toContain("changed while saving");
+    expect(fs.readFileSync(editor.getPath(), "utf8")).toBe(original);
+    finishSave();
+    await running;
+    expect(launch).toHaveBeenCalledOnceWith({
+      command: path.join(directory, "wps.exe"),
+      args: [editor.getPath(), "-run:2", "-e"],
+      options: { cwd: path.dirname(editor.getPath()) },
+    });
+    expect(warningText()).toBe("");
+  });
+
+  it("follows the clicked program when a save hook inserts a header above it", async () => {
+    const original = "+PROG AQUA\nEND\n+PROG ASE\nEND\n";
+    const editor = await openEditor(original);
+    const lens = (await provider.codeLenses(editor))[0];
+    editor.getBuffer().onWillSave(() => editor.getBuffer().insert([0, 0], "! saved header\n"));
+    launch.and.callFake(() => {
+      expect(fs.readFileSync(editor.getPath(), "utf8")).toBe(`! saved header\n${original}`);
+    });
+    await lens.execute();
+    expect(launch).toHaveBeenCalledOnceWith({
+      command: path.join(directory, "wps.exe"),
+      args: [editor.getPath(), "-run:2", "-e"],
+      options: { cwd: path.dirname(editor.getPath()) },
+    });
+    expect(warningText()).toBe("");
   });
 
   it("never launches after the Tools activation ends during save", async () => {

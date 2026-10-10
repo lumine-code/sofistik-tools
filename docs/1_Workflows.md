@@ -18,7 +18,7 @@ An explicitly selected release remains selected when its installation is absent.
 
 ## Calculation
 
-Calculation WPS and Calculation SPS save the source before launching the calculation. An open child buffer is saved too. The selected editor, source text, cursor position and environments stay attached to that action while saving. Changes to focus do not redirect it. A source edit, path change, failed save or package deactivation during saving prevents that action from launching.
+Calculation WPS and Calculation SPS save the source before launching the calculation. An open child buffer is saved too. The selected editor, cursor position and environments stay attached to that action while saving. Changes to focus do not redirect it. Save hooks may update the source, including whitespace cleanup; the calculation reads the resulting file from disk. A path change, unsaved edit, failed save or package deactivation during saving prevents that action from launching.
 
 Declare additional calculation files with one directive per line:
 
@@ -31,7 +31,7 @@ Paths are relative to the declaring file. Duplicate paths run once. Add `@ only-
 
 Calculation WPS Current uses the nearest PROG, SYS or APPLY directive above the captured cursor, outside comments, strings, macro definitions and prose blocks. A CHAPTER heading does not change the selected calculation program. An inactive directive or multiple calculation directives on the same physical line must be corrected before running one.
 
-Code Lens offers Run above complete active `+PROG` headers. It uses the clicked file and row without moving the cursor. An old action refuses to run after its source changes; fetch a fresh action by allowing Code Lens to update. A file declaring `@ only-children` cannot run an individual program.
+Code Lens offers Run above complete active `+PROG` headers. It saves the clicked file and tracks the header's row through save hooks without moving the cursor. An action whose source changed before the click refuses to run; fetch a fresh action by allowing Code Lens to update. Changes made during saving are included in the calculation. A file declaring `@ only-children` cannot run an individual program.
 
 ## Programs and manuals
 
