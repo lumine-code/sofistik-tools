@@ -169,7 +169,7 @@ describe("SOFiSTiK Run links in the code-lens frontend", () => {
     editor.setCursorBufferPosition([7, 4]);
     const cursor = editor.getCursorBufferPosition().toArray();
     const sourcePane = lumine.workspace.paneForItem(editor);
-    otherPane = sourcePane.splitRight({ copyActiveItem: false });
+    otherPane = sourcePane.splitRight();
     otherPane.activate();
     const otherPath = path.join(directory, "other.dat");
     fs.writeFileSync(otherPath, "+PROG ASE\nEND\n");
