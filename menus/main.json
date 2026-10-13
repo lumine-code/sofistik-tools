@@ -5,7 +5,9 @@
       "submenu": [
         {
           "label": "SOFiSTiK Documentation…",
-          "command": "sofistik-tools:toggle-help"
+          "command": "sofistik-tools:toggle-help",
+          "group": "examples",
+          "order": 20
         }
       ]
     },
