@@ -14,6 +14,8 @@ Commands and integrations for SOFiSTiK structural analysis workflows.
 - **Clean commands**: delete temporary files from tree-view.
 - **Child files**: run multiple files with `@ child:filename.dat` directive.
 
+![Toggle individual SOFiSTiK program blocks and see their inline Run actions.](.github/demo.png)
+
 ## Installation
 
 To install `sofistik-tools` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/sofistik-tools`.

@@ -1,0 +1,17 @@
+{
+  "title": "sofistik-tools",
+  "description": "Toggle individual SOFiSTiK program blocks and see their inline Run actions.",
+  "recordedOn": "2026-10-13",
+  "sourceRevision": "5915d682c786b0b95a157caa9133eb27a281fbad",
+  "mode": "normal",
+  "fontSettings": "default",
+  "themeSourceRevision": "6564a9e21899b5541e9c8f8006f9be6d6d72e6ad",
+  "images": [
+    {
+      "file": "demo.png",
+      "label": "Toggle individual SOFiSTiK program blocks and see their inline Run actions.",
+      "width": 1100,
+      "height": 660
+    }
+  ]
+}
