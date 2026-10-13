@@ -8,6 +8,12 @@
           "command": "sofistik-tools:toggle-help",
           "group": "examples",
           "order": 20
+        },
+        {
+          "label": "SOFiSTiK Examples…",
+          "command": "sofistik-tools:toggle-examples",
+          "group": "examples",
+          "order": 30
         }
       ]
     },
