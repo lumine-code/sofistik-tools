@@ -1,6 +1,15 @@
 {
   "menu": [
     {
+      "label": "Help",
+      "submenu": [
+        {
+          "label": "SOFiSTiK Documentation…",
+          "command": "sofistik-tools:toggle-help"
+        }
+      ]
+    },
+    {
       "label": "Packages",
       "submenu": [
         {
