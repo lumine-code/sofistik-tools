@@ -20,8 +20,6 @@ To install `sofistik-tools` search for it in the Install pane of the Lumine sett
 
 Install [code-lens](https://github.com/lumine-code/code-lens) to display the Run links above active `+PROG` headers.
 
-Click Run to save that file and calculate the selected block in WPS. The action uses the file's project environment and does not move the cursor. Editing the source refreshes its actions; a stale action refuses to launch a different block. Save an untitled file first. A matching SOFiSTiK installation is required.
-
 ## Commands
 
 Commands available in `lumine-workspace`. Each uses the editor that dispatched it, falling back to the active editor, and declines with a notification when its grammar is not SOFiSTiK:
@@ -121,13 +119,11 @@ Commands available in `lumine-workspace`, acting on the tree view selection:
 
 Each `clean-n` command also has a `clean-n-recursively` variant that descends into subdirectories.
 
-## Usage
+## Documentation
 
-Place `sofistik.def` beside a saved source to declare `SOF_VERSION`, `SOF_LANGUAGE` (`EN` or `DE`) and `SOF_EDITION` (`professional` or `educational`). Files in different directories resolve independently. Without an adjacent declared year, the newest installed release applies, then the newest bundled dataset for offline keyword data. Every application checks its own executable, so a CDB-only installation cannot start a calculation.
-
-Calculations capture their editor and environments before saving. Parent and open child buffers save before the first launch; save hooks may update the source, and calculations use the saved files. A path change, unsaved edit or package deactivation while saving prevents the pending action. Manuals and examples keep the selected installation's paths even if another project takes focus.
-
-See [Workflows](docs/1_Workflows.md) for child calculations, program boundaries, manual navigation and maintenance, and [Architecture](docs/2_Architecture.md) for module ownership and validation.
+- [SOFiSTiK workflows](docs/1_Workflows.md): setup, include files, project definitions, language intelligence, static linting, calculations, manuals, model views and migration.
+- [Architecture](docs/2_Architecture.md): module ownership, library composition, operation lifetime and validation.
+- [Language servers](https://github.com/lumine-code/ide/blob/master/docs/language-servers.md): client, frontend and server management setup.
 
 ## Customization
 
