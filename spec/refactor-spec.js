@@ -43,7 +43,7 @@ describe("SOFiSTiK operation boundaries", () => {
     jasmine.attachToDOM(lumine.workspace.getElement());
     await lumine.packages.activatePackage(path.join(__dirname, "..", "..", "language-sofistik"));
     main = (await lumine.packages.activatePackage("sofistik-tools")).mainModule;
-    runtime = main.ensureRuntime();
+    runtime = await main.ensureRuntime();
     resolverClass = require("@lumine-code/sofistik-context").SofistikContextResolver;
     runtime.environmentProvider = new resolverClass({ root: path.join(directory, "installed") });
     lumine.notifications.clear();

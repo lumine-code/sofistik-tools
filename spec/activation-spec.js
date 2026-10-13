@@ -48,7 +48,7 @@ describe("sofistik-tools bootstrap activation", () => {
   ]) {
     it(`materializes only ${property} when ${command} is used and reuses it`, async () => {
       if (property !== "versionList") {
-        spyOn(mainModule.ensureRuntime(), "getSofPath").and.returnValue(undefined);
+        spyOn(await mainModule.ensureRuntime(), "getSofPath").and.returnValue(undefined);
       }
 
       await lumine.commands.dispatch(workspaceElement, command);

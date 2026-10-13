@@ -9,7 +9,7 @@ describe("sofistik-tools item actions", () => {
   beforeEach(async () => {
     jasmine.attachToDOM(lumine.views.getView(lumine.workspace));
     const pack = await lumine.packages.activatePackage("sofistik-tools");
-    mainModule = pack.mainModule.ensureRuntime();
+    mainModule = await pack.mainModule.ensureRuntime();
     helpList = mainModule.helpList;
     helpList.ensureSelectList();
   });

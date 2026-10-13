@@ -30,7 +30,9 @@ describe("SOFiSTiK program code lenses", () => {
     editors = [];
     jasmine.attachToDOM(lumine.workspace.getElement());
     await lumine.packages.activatePackage(path.join(__dirname, "..", "..", "language-sofistik"));
-    main = (await lumine.packages.activatePackage("sofistik-tools")).mainModule.ensureRuntime();
+    main = await (
+      await lumine.packages.activatePackage("sofistik-tools")
+    ).mainModule.ensureRuntime();
     lumine.config.unset("sofistik-tools.inlineActions");
     lumine.config.unset("sofistik-tools.inlineActions", { scopeSelector: ".source.sofistik" });
     provider = main.owner.provideCodeLens();

@@ -61,8 +61,8 @@ describe("SOFiSTiK service and command lifetime", () => {
       expect(main[field]).toBe(payload);
     });
   }
-  it("does not recreate a native help picker from a copied retired Core command handler", () => {
-    const runtime = main.ensureRuntime();
+  it("does not recreate a native help picker from a copied retired Core command handler", async () => {
+    const runtime = await main.ensureRuntime();
     spyOn(runtime, "resolveEnvironment").and.returnValue(null);
     const create = spyOn(lumine.workspace, "addSelectList").and.callThrough();
     extra.push(
@@ -70,11 +70,11 @@ describe("SOFiSTiK service and command lifetime", () => {
         main.deactivate(),
       ),
     );
-    lumine.commands.dispatch(lumine.workspace.getElement(), "sofistik-tools:toggle-help");
+    await lumine.commands.dispatch(lumine.workspace.getElement(), "sofistik-tools:toggle-help");
     expect(create).not.toHaveBeenCalled();
   });
-  it("does not create a picker after actual tree selection delivery retires the command owner", () => {
-    const runtime = main.ensureRuntime();
+  it("does not create a picker after actual tree selection delivery retires the command owner", async () => {
+    const runtime = await main.ensureRuntime();
     spyOn(runtime, "resolveEnvironment").and.returnValue(null);
     providers.push(
       main.consumeTreeViewSelection({
@@ -85,7 +85,7 @@ describe("SOFiSTiK service and command lifetime", () => {
       }),
     );
     const create = spyOn(lumine.workspace, "addSelectList").and.callThrough();
-    lumine.commands.dispatch(lumine.workspace.getElement(), "sofistik-tools:toggle-help");
+    await lumine.commands.dispatch(lumine.workspace.getElement(), "sofistik-tools:toggle-help");
     expect(create).not.toHaveBeenCalled();
   });
   it("retires a manual handler registered through the actual external registry", async () => {

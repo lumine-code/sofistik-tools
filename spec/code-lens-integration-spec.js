@@ -70,7 +70,7 @@ describe("SOFiSTiK Run links in the code-lens frontend", () => {
     await lumine.packages.activatePackage(companionPath("language-sofistik"));
     frontend = (await lumine.packages.activatePackage(companionPath("code-lens"))).mainModule;
     lumine.config.set("code-lens.enabled", true);
-    tools = (await lumine.packages.activatePackage(PACKAGE_ROOT)).mainModule.ensureRuntime();
+    tools = await (await lumine.packages.activatePackage(PACKAGE_ROOT)).mainModule.ensureRuntime();
     lumine.config.unset("sofistik-tools.inlineActions");
     lumine.config.unset("sofistik-tools.inlineActions", { scopeSelector: ".source.sofistik" });
     stubNativeLaunch();
@@ -199,7 +199,7 @@ describe("SOFiSTiK Run links in the code-lens frontend", () => {
     expect(frontend.manager.registry.providers).not.toContain(previousProvider);
     expect(editor.getElement().querySelectorAll(".code-lens").length).toBe(0);
 
-    tools = (await lumine.packages.activatePackage(PACKAGE_ROOT)).mainModule.ensureRuntime();
+    tools = await (await lumine.packages.activatePackage(PACKAGE_ROOT)).mainModule.ensureRuntime();
     stubNativeLaunch();
     expect(tools).not.toBe(previousMain);
     expect(tools.owner.provideCodeLens()).not.toBe(previousProvider);

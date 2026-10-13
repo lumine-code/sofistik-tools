@@ -50,7 +50,7 @@ describe("SOFiSTiK include help", () => {
     jasmine.attachToDOM(workspaceElement);
     await lumine.packages.activatePackage(path.join(__dirname, "..", "..", "language-sofistik"));
     const pack = await lumine.packages.activatePackage("sofistik-tools");
-    runtime = pack.mainModule.ensureRuntime();
+    runtime = await pack.mainModule.ensureRuntime();
     runtime.environmentProvider = {
       resolve: () => ({ version: "2026", language: "en" }),
     };

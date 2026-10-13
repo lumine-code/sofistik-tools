@@ -81,7 +81,7 @@ describe("sofistik-tools", () => {
     jasmine.attachToDOM(workspaceElement);
     await lumine.packages.activatePackage(LANGUAGE_SOFISTIK_PATH);
     const pack = await lumine.packages.activatePackage("sofistik-tools");
-    mainModule = pack.mainModule.ensureRuntime();
+    mainModule = await pack.mainModule.ensureRuntime();
   });
 
   afterEach(() => {
@@ -1224,7 +1224,7 @@ describe("sofistik-tools", () => {
   });
 
   describe("open-external service integration", () => {
-    it("registers a handler that dispatches SOFiSTiK file types", () => {
+    it("registers a handler that dispatches SOFiSTiK file types", async () => {
       let handler = null;
       const disposable = mainModule.owner.consumeOpenExternal({
         registerHandler(options) {
@@ -1237,13 +1237,13 @@ describe("sofistik-tools", () => {
       spyOn(mainModule, "openTeddy");
       spyOn(mainModule, "openWinGRAF");
       spyOn(mainModule, "openAnimator");
-      handler.openExternal("C:\\proj\\model.dat");
+      await handler.openExternal("C:\\proj\\model.dat");
       expect(mainModule.openTeddy).toHaveBeenCalledWith("C:\\proj\\model.dat");
-      handler.openExternal("C:\\proj\\plot.gra");
+      await handler.openExternal("C:\\proj\\plot.gra");
       expect(mainModule.openWinGRAF).toHaveBeenCalledWith("C:\\proj\\plot.gra");
-      handler.openExternal("C:\\proj\\model.cdb");
+      await handler.openExternal("C:\\proj\\model.cdb");
       expect(mainModule.openAnimator).toHaveBeenCalledWith("C:\\proj\\model.cdb");
-      expect(handler.openExternal("C:\\proj\\other.xyz")).toBeUndefined();
+      expect(await handler.openExternal("C:\\proj\\other.xyz")).toBeUndefined();
 
       disposable.dispose();
     });

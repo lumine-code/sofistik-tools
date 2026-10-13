@@ -15,7 +15,7 @@ describe("SOFiSTiK pickers in editor windows", () => {
     const second = workspace.buildTextEditor();
     extra.getEditorContainer().getActivePane().activateItem(second, { activatePane: true });
     const main = lumine.packages.getActivePackage("sofistik-tools").mainModule;
-    const runtime = main.ensureRuntime();
+    const runtime = await main.ensureRuntime();
     const local = runtime.versionList;
     const remote = runtime.listsForWindow(extra).versionList;
     const item = { version: "2026", filePath: "captured.def" };
