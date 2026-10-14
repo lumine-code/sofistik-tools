@@ -74,7 +74,8 @@ describe("SOFiSTiK manual opening actions", () => {
 
       row.dispatchEvent(new MouseEvent("click", { bubbles: true, button: 0, ...modifiers }));
 
-      expect(run).toHaveBeenCalledOnceWith(command);
+      expect(run).toHaveBeenCalledTimes(1);
+      expect(run.calls.mostRecent().args[0]).toBe(command);
     });
   }
 
