@@ -77,13 +77,20 @@ Commands available in `lumine-workspace`:
 
 Actions shown for `.sofistik-tools.help-list`:
 
-- `sofistik-tools:open-in`: open the selected manual in the editor,
+- `sofistik-tools:open-in`: open the selected manual with its default opener at the query destination,
 - `sofistik-tools:open-ex`: open the selected manual in the system PDF viewer,
+- `sofistik-tools:open-help-with`: choose how and where to open the manual at the query destination,
+- `sofistik-tools:open-help-pending`: preview the selected manual as a pending Text Editor tab,
+- `sofistik-tools:show-help-in-folder`: reveal the selected manual in the system file manager,
 - `sofistik-tools:cache-help`: rebuild the help cache.
 
 Actions shown for `.sofistik-tools.example-list`:
 
-- `sofistik-tools:open-example`: open the selected example in the editor,
+- `sofistik-tools:open-example`: open the selected example with its default file opener,
+- `sofistik-tools:open-example-with`: choose how and where to open the selected example,
+- `sofistik-tools:open-example-pending`: preview the selected example as a pending Text Editor tab,
+- `sofistik-tools:open-example-external`: open the selected example in its default external program,
+- `sofistik-tools:show-example-in-folder`: reveal the selected example in the system file manager,
 - `sofistik-tools:cache-examples`: rebuild the examples cache.
 
 Cache actions keep their list open and rescan its selected installation.

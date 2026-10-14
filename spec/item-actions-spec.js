@@ -39,20 +39,23 @@ describe("sofistik-tools item actions", () => {
     expect([...byCommand.keys()].sort()).toEqual([
       "sofistik-tools:cache-help",
       "sofistik-tools:open-ex",
+      "sofistik-tools:open-help-pending",
+      "sofistik-tools:open-help-with",
       "sofistik-tools:open-in",
+      "sofistik-tools:show-help-in-folder",
     ]);
 
     const openIn = byCommand.get("sofistik-tools:open-in");
     expect(openIn.name).toBe("Open In");
     expect(openIn.description).toBe(
-      "Open the manual in the editor, at the destination after the colon.",
+      "Open the manual with its default opener at the query destination.",
     );
     expect(openIn.primary).toBe(true);
     expect(openIn.context).toBe("item");
 
     const openEx = byCommand.get("sofistik-tools:open-ex");
     expect(openEx.description).toBe("Open the manual in the system PDF viewer.");
-    expect(openEx.keystrokes).toEqual(["alt-f12"]);
+    expect(openEx.keystrokes).toEqual(["ctrl-alt-enter"]);
     expect(openEx.context).toBe("item");
 
     const cacheHelp = byCommand.get("sofistik-tools:cache-help");
@@ -174,7 +177,10 @@ describe("sofistik-tools item actions", () => {
 
     const expectedURI = pathToFileURL(path.join(sofDir, "aqua_1.pdf"));
     expectedURI.hash = "nameddest=GRP1";
-    expect(lumine.workspace.open).toHaveBeenCalledWith(expectedURI.href);
+    expect(lumine.workspace.open).toHaveBeenCalledTimes(1);
+    const [uri, options] = lumine.workspace.open.calls.mostRecent().args;
+    expect(uri).toBe(expectedURI.href);
+    expect(options.pending).toBe(lumine.config.get("core.allowPendingPaneItems"));
   });
 
   it("shows the actions as a flow step and runs one against the master list", async () => {
@@ -194,7 +200,9 @@ describe("sofistik-tools item actions", () => {
     lumine.workspace.popModal();
     await helpList.selectList.runAction("sofistik-tools:open-ex");
 
-    expect(spy).toHaveBeenCalledWith(selected, "open-ex");
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy.calls.mostRecent().args[0]).toBe(selected);
+    expect(spy.calls.mostRecent().args[1]).toBe("open-ex");
     expect(helpList.selectListHost.isVisible()).toBeFalsy();
   });
 });
