@@ -63,26 +63,10 @@ describe("SOFiSTiK manual opening actions", () => {
     });
   });
 
-  it("forces a pending Text Editor preview even with pending tabs disabled", async () => {
-    lumine.config.set("core.allowPendingPaneItems", false);
-    const open = spyOn(lumine.workspace, "open").and.resolveTo();
-
-    await list.selectList.runAction("sofistik-tools:open-help-pending");
-
-    expect(open).toHaveBeenCalledTimes(1);
-    const [uri, options] = open.calls.mostRecent().args;
-    expect(uri).toBe(`${pathToFileURL(item.filePath).href}#nameddest=GRP1`);
-    expect(options.pane).toBe(list.openingPane);
-    expect(options.opener).toBe("text-editor");
-    expect(options.pending).toBe(true);
-    expect(options.forcePending).toBe(true);
-  });
-
   for (const [command, modifiers] of [
     ["sofistik-tools:open-help-with", { altKey: true }],
-    ["sofistik-tools:open-help-pending", { shiftKey: true }],
     ["sofistik-tools:open-ex", { ctrlKey: true, altKey: true }],
-    ["sofistik-tools:show-help-in-folder", { ctrlKey: true, shiftKey: true }],
+    ["sofistik-tools:show-help-in-folder", { altKey: true, shiftKey: true }],
   ]) {
     it(`dispatches only ${command} from its row gesture`, () => {
       const run = spyOn(list.selectList, "runAction").and.resolveTo();
@@ -96,9 +80,8 @@ describe("SOFiSTiK manual opening actions", () => {
 
   for (const [command, modifiers] of [
     ["sofistik-tools:open-help-with", { altKey: true }],
-    ["sofistik-tools:open-help-pending", { shiftKey: true }],
     ["sofistik-tools:open-ex", { ctrlKey: true, altKey: true }],
-    ["sofistik-tools:show-help-in-folder", { ctrlKey: true, shiftKey: true }],
+    ["sofistik-tools:show-help-in-folder", { altKey: true, shiftKey: true }],
   ]) {
     it(`dispatches ${command} from its Enter keymap with the parsed query snapshot`, async () => {
       let finish;
@@ -123,6 +106,19 @@ describe("SOFiSTiK manual opening actions", () => {
       expect(
         lumine.keymaps.findKeyBindings({ target: lumine.workspace.getElement(), command }),
       ).toEqual([]);
+    });
+  }
+
+  for (const modifiers of [{ shiftKey: true }, { ctrlKey: true, shiftKey: true }]) {
+    it(`selects a manual without opening it on ${modifiers.ctrlKey ? "Ctrl-Shift" : "Shift"} click`, () => {
+      const run = spyOn(list.selectList, "runAction").and.resolveTo();
+      const row = list.selectList.getElement().querySelector("li");
+
+      row.dispatchEvent(new MouseEvent("click", { bubbles: true, button: 0, ...modifiers }));
+
+      expect(list.selectList.getSelectedItem()).toBe(item);
+      expect(run).not.toHaveBeenCalled();
+      expect(list.selectListHost.isVisible()).toBe(true);
     });
   }
 

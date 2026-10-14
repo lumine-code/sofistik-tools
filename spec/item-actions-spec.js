@@ -39,7 +39,6 @@ describe("sofistik-tools item actions", () => {
     expect([...byCommand.keys()].sort()).toEqual([
       "sofistik-tools:cache-help",
       "sofistik-tools:open-ex",
-      "sofistik-tools:open-help-pending",
       "sofistik-tools:open-help-with",
       "sofistik-tools:open-in",
       "sofistik-tools:show-help-in-folder",

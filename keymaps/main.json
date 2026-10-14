@@ -19,15 +19,13 @@
   ".sofistik-tools.help-list lumine-text-editor[mini]": {
     "f5": "sofistik-tools:cache-help",
     "alt-enter": "sofistik-tools:open-help-with",
-    "shift-enter": "sofistik-tools:open-help-pending",
     "ctrl-alt-enter": "sofistik-tools:open-ex",
-    "ctrl-shift-enter": "sofistik-tools:show-help-in-folder"
+    "alt-shift-enter": "sofistik-tools:show-help-in-folder"
   },
   ".sofistik-tools.example-list lumine-text-editor[mini]": {
     "alt-enter": "sofistik-tools:open-example-with",
-    "shift-enter": "sofistik-tools:open-example-pending",
     "ctrl-alt-enter": "sofistik-tools:open-example-external",
-    "ctrl-shift-enter": "sofistik-tools:show-example-in-folder",
+    "alt-shift-enter": "sofistik-tools:show-example-in-folder",
     "f5": "sofistik-tools:cache-examples"
   }
 }

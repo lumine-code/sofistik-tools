@@ -52,7 +52,7 @@ describe("SOFiSTiK example opening actions", () => {
     });
   }
 
-  it("uses a registered default opener and reserves the text editor for preview", async () => {
+  it("uses a registered default opener", async () => {
     const viewer = jasmine.createSpy("example viewer").and.callFake(() => {
       const editor = lumine.workspace.buildTextEditor();
       editor.setText("Opened by the example viewer");
@@ -73,15 +73,6 @@ describe("SOFiSTiK example opening actions", () => {
 
     expect(viewer).toHaveBeenCalledTimes(1);
     expect(list.openingPane.getActiveItem().getText()).toBe("Opened by the example viewer");
-    lumine.config.set("core.allowPendingPaneItems", false);
-    await list.selectListHost.show();
-    await list.selectList.runAction("sofistik-tools:open-example-pending");
-
-    const preview = list.openingPane.getActiveItem();
-    expect(preview.getPath()).toBe(item.filePath);
-    expect(preview.getText()).toBe("+PROG ASE\nEND\n");
-    expect(list.openingPane.getPendingItem()).toBe(preview);
-    expect(viewer).toHaveBeenCalledTimes(1);
   });
 
   it("passes the selected path and captured pane to Open With", async () => {
@@ -101,17 +92,18 @@ describe("SOFiSTiK example opening actions", () => {
     other.activate();
     const open = spyOn(lumine.workspace, "open").and.resolveTo();
 
-    await list.selectList.runAction("sofistik-tools:open-example-pending");
+    await list.selectList.runAction("sofistik-tools:open-example");
 
     expect(open.calls.mostRecent().args[1].pane).toBe(pane);
-    expect(open.calls.mostRecent().args[1].forcePending).toBe(true);
+    expect(open.calls.mostRecent().args[1].pending).toBe(
+      lumine.config.get("core.allowPendingPaneItems"),
+    );
   });
 
   for (const [command, modifiers] of [
     ["sofistik-tools:open-example-with", { altKey: true }],
-    ["sofistik-tools:open-example-pending", { shiftKey: true }],
     ["sofistik-tools:open-example-external", { ctrlKey: true, altKey: true }],
-    ["sofistik-tools:show-example-in-folder", { ctrlKey: true, shiftKey: true }],
+    ["sofistik-tools:show-example-in-folder", { altKey: true, shiftKey: true }],
   ]) {
     it(`dispatches only ${command} from its row gesture`, async () => {
       const run = spyOn(list.selectList, "runAction").and.resolveTo();
@@ -125,9 +117,8 @@ describe("SOFiSTiK example opening actions", () => {
 
   for (const [command, key, code, modifiers] of [
     ["sofistik-tools:open-example-with", "Enter", "Enter", { altKey: true }],
-    ["sofistik-tools:open-example-pending", "Enter", "Enter", { shiftKey: true }],
     ["sofistik-tools:open-example-external", "Enter", "Enter", { ctrlKey: true, altKey: true }],
-    ["sofistik-tools:show-example-in-folder", "Enter", "Enter", { ctrlKey: true, shiftKey: true }],
+    ["sofistik-tools:show-example-in-folder", "Enter", "Enter", { altKey: true, shiftKey: true }],
   ]) {
     it(`dispatches ${command} from the query editor's keymap`, async () => {
       const action = spyOn(list, "performAction").and.resolveTo();
@@ -148,6 +139,21 @@ describe("SOFiSTiK example opening actions", () => {
       expect(
         lumine.keymaps.findKeyBindings({ target: lumine.workspace.getElement(), command }),
       ).toEqual([]);
+    });
+  }
+
+  for (const modifiers of [{ shiftKey: true }, { ctrlKey: true, shiftKey: true }]) {
+    it(`selects another example without opening it on ${modifiers.ctrlKey ? "Ctrl-Shift" : "Shift"} click`, async () => {
+      const other = { ...item, fileName: "other.dat", title: "other.dat", text: "other.dat ASE" };
+      await list.selectList.setItems([item, other]);
+      const run = spyOn(list.selectList, "runAction").and.resolveTo();
+      const rows = list.selectList.getElement().querySelectorAll("li");
+
+      rows[1].dispatchEvent(new MouseEvent("click", { bubbles: true, button: 0, ...modifiers }));
+
+      expect(list.selectList.getSelectedItem()).toBe(other);
+      expect(run).not.toHaveBeenCalled();
+      expect(list.selectListHost.isVisible()).toBe(true);
     });
   }
 
