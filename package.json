@@ -86,7 +86,7 @@
     "prettier": "^3.9.9"
   },
   "dependencies": {
-    "@lumine-code/sofistik-schema": "github:lumine-code/sofistik-schema#851e5882e5f2dec8538edc1e5c649fff33b523cc",
+    "@lumine-code/sofistik-schema": "github:lumine-code/sofistik-schema#265f417be0c820ad5f9aa902a76a9b4a63422541",
     "@lumine-code/sofistik-context": "github:lumine-code/sofistik-context#b3c11f0be26f32810a284b86bd066feddea3d207"
   }
 }
