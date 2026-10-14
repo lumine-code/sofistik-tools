@@ -1,17 +1,71 @@
 {
   "title": "sofistik-tools",
   "description": "Toggle individual SOFiSTiK program blocks and see their inline Run actions.",
-  "recordedOn": "2026-10-13",
-  "sourceRevision": "5915d682c786b0b95a157caa9133eb27a281fbad",
+  "recordedOn": "2026-10-14",
+  "sourceRevision": "6aeaa9708eb95f214328a55aafb6830177edad22",
+  "themeSourceRevision": "7fbd047a87ecf1367c896b19ff270cdc28d319f7",
   "mode": "normal",
   "fontSettings": "default",
-  "themeSourceRevision": "6564a9e21899b5541e9c8f8006f9be6d6d72e6ad",
+  "scenario": "demo.js",
+  "recipeHash": "4ce211cf76f808409e0dd8e9ea8affc3cc85d00cad440f749483b5479a7908e5",
+  "environment": {
+    "platform": "win32",
+    "arch": "x64",
+    "electron": "44.7.0",
+    "chrome": "152.0.7977.130",
+    "devicePixelRatio": 1,
+    "locale": "en-GB",
+    "fontFamily": "Fira Code, Menlo, DejaVu Sans Mono, Consolas, monospace",
+    "fontSize": 14,
+    "themes": ["one-day-syntax", "one-day-ui"]
+  },
+  "viewport": { "width": 1100, "height": 660 },
+  "cornerRadius": 10,
+  "sources": {
+    "editor": {
+      "revision": "f843acddbced9b8bd7bbe0a96005bb55429694ce",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "package": {
+      "revision": "6aeaa9708eb95f214328a55aafb6830177edad22",
+      "dirty": true,
+      "workingTreeHash": "e8bb24e44cad3141657a9efb2668dc2e5e97ce954c4c3fbf74082e1cdc08eb09"
+    },
+    "sofistik-tools": {
+      "revision": "6aeaa9708eb95f214328a55aafb6830177edad22",
+      "dirty": true,
+      "workingTreeHash": "e8bb24e44cad3141657a9efb2668dc2e5e97ce954c4c3fbf74082e1cdc08eb09"
+    },
+    "code-lens": {
+      "revision": "9a14098eb35277712a7af35f155fac0e32085315",
+      "dirty": true,
+      "workingTreeHash": "69c1f4aa23bb0b6f0ec906fd47d33cdba19383c5d94e3680d19944567ec639ed"
+    },
+    "language-sofistik": {
+      "revision": "dc7c917ff6d31dda9cd535093c3e0d57acca7c6a",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "one-theme": {
+      "revision": "7fbd047a87ecf1367c896b19ff270cdc28d319f7",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "fixtures": [
+    {
+      "file": "example.dat",
+      "sha256": "deeb300b5fb14cc02ca924219ac04cb033dbc1126cee641220b408b37d25aef9"
+    }
+  ],
   "images": [
     {
       "file": "demo.png",
       "label": "Toggle individual SOFiSTiK program blocks and see their inline Run actions.",
       "width": 1100,
-      "height": 660
+      "height": 660,
+      "sha256": "72824e4879ee75731f264f554c08b03189bd09e4c2ce11b17e59a89c37f76a8c"
     }
   ]
 }
