@@ -29,6 +29,15 @@ describe("sofistik-tools bootstrap activation", () => {
     expect(mainModule.runtime).toBeNull();
   });
 
+  it("keeps source context, actions and document parsing unloaded during bootstrap", () => {
+    mainModule.provideCodeLens();
+    for (const filename of ["command-context.js", "program-actions.js", "document-structure.js"]) {
+      expect(require.cache[path.join(pack.path, "lib", filename)])
+        .withContext(`${filename} should load when a supported source action needs it`)
+        .toBeUndefined();
+    }
+  });
+
   it("registers list openers synchronously and keeps cache commands local", () => {
     const commands = lumine.commands
       .findCommands({ target: workspaceElement })
