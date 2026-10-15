@@ -12,7 +12,7 @@ describe("SOFiSTiK versioned path openers", () => {
     directory = fs.mkdtempSync(path.join(os.tmpdir(), "sofistik-path-openers-"));
     leases = new CompositeDisposable();
     main = (await lumine.packages.activatePackage("sofistik-tools")).mainModule;
-    main.pathOpeners.dispose();
+    main.pathOpeners?.dispose();
     main.pathOpeners = null;
     const { SofistikContextResolver } = require("@lumine-code/sofistik-context");
     resolver = new SofistikContextResolver({ root: path.join(directory, "installed") });
@@ -256,7 +256,7 @@ describe("SOFiSTiK versioned path openers", () => {
     expect(previous.canOpen(filePath)).toBe(false);
     expect(await previous.open(filePath)).toBe("");
     main = (await lumine.packages.activatePackage("sofistik-tools")).mainModule;
-    main.pathOpeners.dispose();
+    main.pathOpeners?.dispose();
     register();
     expect(choices(filePath).map(({ id }) => id)).toEqual(["sofistik-tools:animator-2026"]);
     expect(launch).not.toHaveBeenCalled();
