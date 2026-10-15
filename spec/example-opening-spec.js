@@ -75,12 +75,12 @@ describe("SOFiSTiK example opening actions", () => {
     expect(list.openingPane.getActiveItem().getText()).toBe("Opened by the example viewer");
   });
 
-  it("passes the selected path and captured pane to Open With", async () => {
+  it("passes the selected path and captured pane to Launcher", async () => {
     const dispatch = spyOn(lumine.commands, "dispatch").and.resolveTo(true);
 
-    await list.performAction("open-with", { item });
+    await list.performAction("choose-opener", { item });
 
-    expect(dispatch).toHaveBeenCalledOnceWith(list.window.getElement(), "open-with:toggle", {
+    expect(dispatch).toHaveBeenCalledOnceWith(list.window.getElement(), "launcher:open", {
       path: item.filePath,
       pane: list.openingPane,
     });

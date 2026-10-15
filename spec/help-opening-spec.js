@@ -49,14 +49,14 @@ describe("SOFiSTiK manual opening actions", () => {
     });
   }
 
-  it("hands the exact named destination and original pane to Open With", async () => {
+  it("hands the exact named destination and original pane to Launcher", async () => {
     const pane = list.openingPane;
     pane.splitRight().activate();
     const dispatch = spyOn(lumine.commands, "dispatch").and.resolveTo(true);
 
-    await list.performAction(item, "open-with", "grp 1");
+    await list.performAction(item, "choose-opener", "grp 1");
 
-    expect(dispatch).toHaveBeenCalledOnceWith(list.window.getElement(), "open-with:toggle", {
+    expect(dispatch).toHaveBeenCalledOnceWith(list.window.getElement(), "launcher:open", {
       path: item.filePath,
       pane,
       uriFragment: "nameddest=GRP1",
