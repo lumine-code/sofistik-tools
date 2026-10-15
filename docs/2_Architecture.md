@@ -29,6 +29,22 @@ SOFiSTiK Tools composes environment discovery, keyword datasets and editor workf
 
 Each feature resolves only its effective file targets before its first asynchronous boundary. An unrelated tree selection cannot change an editor operation, and a background editor cannot change a tree operation. Source editing and maintenance require no environment validation. Installation capabilities are checked for the requested application before launching. Changing an adjacent definition while a save is pending changes a later operation, not the environment already chosen for that calculation.
 
+## Native application opening
+
+Launcher **Open…** lists a named opener for each application present in an installed SOFiSTiK release. Choosing **Animator 2018**, for example, launches that exact executable without changing `sofistik.def`. These explicit external actions never become the default opener; the separate `open-external` handler retains automatic release selection from the file's context.
+
+| File type      | Available application                                     |
+| -------------- | --------------------------------------------------------- |
+| `.cdb`         | Animator, Viewer (2024+), FEA Viewer (2020–2023), DBInfo. |
+| `.dat`, `.gra` | Teddy.                                                    |
+| `.gra`         | WinGRAF.                                                  |
+| `.plb`         | Report Viewer.                                            |
+| `.sofistik`    | SSD.                                                      |
+| `.results`     | ResultViewer.                                             |
+| `.dwg`         | SOFiPLUS, when a same-basename `.dat` file exists.        |
+
+Reload the package after installing another release to register its applications. Removed executables stop appearing when opening the chooser again; an already visible chooser keeps its snapshot, and a stale selection is rechecked before launch.
+
 ## Ownership and teardown
 
 An activation owns its command registrations, Code Lens provider, runtime, list hosts, indexing processes and maintenance dialogs. A consumed-service disposable removes only its own provider edge; an obsolete edge cannot clear a replacement provider. Indexing generations reject late results after invalidation or disposal. Rows include their own source paths instead of deriving a path from mutable list state.

@@ -9,7 +9,7 @@ Commands and integrations for SOFiSTiK structural analysis workflows.
 - **Help system**: open PDF manuals in [pdf-view](https://github.com/lumine-code/pdf-view) with jump-to-command support for programs and include fragments.
 - **Calculation**: run WPS/SPS directly from the editor.
 - **Inline Run**: run an active PROG block in WPS from its Code Lens action, independently of the cursor position.
-- **Native applications**: choose an installed SOFiSTiK release in Launcher Open while preserving automatic external file handling.
+- **Native applications**: choose an installed SOFiSTiK release in [Launcher Open](docs/2_Architecture.md#native-application-opening) while preserving automatic external file handling.
 - **Program control**: toggle programs on/off in `.dat` files.
 - **Clean commands**: delete temporary files from tree-view.
 - **Child files**: run multiple files with `@ child:filename.dat` directive.
@@ -142,12 +142,10 @@ The examples list can be restyled from your `styles.css`, e.g.:
 
 ## Services
 
-Launcher **Open…** lists a separate named opener for each application actually present in an installed SOFiSTiK release. Choosing **Animator 2018**, for example, opens that exact executable without changing `sofistik.def`. Available types are Animator, Viewer (2024+) or FEA Viewer (2020–2023), and DBInfo for `.cdb`; Teddy for `.dat` and `.gra`; WinGRAF for `.gra`; Report Viewer for `.plb`; SSD for `.sofistik`; ResultViewer for `.results`; and SOFiPLUS for `.dwg` with a same-basename `.dat` file. Entries are explicit external actions and never become the default opener. Reload the package after installing another release to register its applications; removed executables stop appearing immediately.
-
 - `code-lens.provider`: provided to code-lens to display Run actions above active PROG headers.
 - `background-tips.provider`: provided to background-tips to explain calculation commands.
 - `tree-view.selection`: consumed to read the selected paths for the tree-view commands (open, clean, wing-fix).
-- `open-external`: consumed to register handlers that open SOFiSTiK file types in their native applications using the release resolved from the file's adjacent `sofistik.def` or the usual installed-release fallback. This automatic route remains independent of the versioned Launcher choices.
+- `open-external`: consumed to resolve automatic native application releases from the adjacent `sofistik.def` or installed-release fallback, independently of explicit Launcher choices.
 - `pdf-view`: consumed to open and reuse PDF manual viewers with named-destination navigation.
 
 ## Contributing
