@@ -7,7 +7,6 @@
     "shift-f5": "sofistik-tools:calculation-wps-current",
     "alt-f5": "sofistik-tools:calculation-sps",
     "f7": "sofistik-tools:open-animator",
-    "alt-f7": "sofistik-tools:open-animator-2018",
     "f8": "sofistik-tools:open-wingraf",
     "ctrl-f8": "sofistik-tools:open-result-viewer",
     "f9": "sofistik-tools:open-report"

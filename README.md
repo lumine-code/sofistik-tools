@@ -9,7 +9,7 @@ Commands and integrations for SOFiSTiK structural analysis workflows.
 - **Help system**: open PDF manuals in [pdf-view](https://github.com/lumine-code/pdf-view) with jump-to-command support for programs and include fragments.
 - **Calculation**: run WPS/SPS directly from the editor.
 - **Inline Run**: run an active PROG block in WPS from its Code Lens action, independently of the cursor position.
-- **File handlers**: open CDB, PLB, GRA files with double-click.
+- **Native applications**: choose an installed SOFiSTiK release in Launcher Open while preserving automatic external file handling.
 - **Program control**: toggle programs on/off in `.dat` files.
 - **Clean commands**: delete temporary files from tree-view.
 - **Child files**: run multiple files with `@ child:filename.dat` directive.
@@ -37,7 +37,6 @@ Commands available in `lumine-workspace`. Each uses the editor that dispatched i
 - `sofistik-tools:save-pictures-as-pdf`: export pictures from report to PDF,
 - `sofistik-tools:open-protocol`: open `.prt` protocol file in editor,
 - `sofistik-tools:open-animator`: open `.cdb` in Animator,
-- `sofistik-tools:open-animator-2018`: open `.cdb` in Animator 2018,
 - `sofistik-tools:open-viewer`: open `.cdb` in Viewer (2024+) or FEA Viewer (2020-2023),
 - `sofistik-tools:open-dbinfo`: open `.cdb` in Database Info,
 - `sofistik-tools:open-ssd`: open `.sofistik` file in SSD,
@@ -96,7 +95,6 @@ Cache actions keep their list open and rescan its selected installation.
 Commands available in `lumine-workspace`, acting on the tree view selection:
 
 - `sofistik-tools:open-animator`: open selected `.cdb` in Animator,
-- `sofistik-tools:open-animator-2018`: open selected `.cdb` in Animator 2018,
 - `sofistik-tools:open-report`: open selected `.plb` in Report Viewer,
 - `sofistik-tools:save-report-as-pdf`: export selected report to PDF,
 - `sofistik-tools:save-pictures-as-pdf`: export pictures from selected report,
@@ -144,10 +142,12 @@ The examples list can be restyled from your `styles.css`, e.g.:
 
 ## Services
 
+Launcher **Open…** lists a separate named opener for each application actually present in an installed SOFiSTiK release. Choosing **Animator 2018**, for example, opens that exact executable without changing `sofistik.def`. Available types are Animator, Viewer (2024+) or FEA Viewer (2020–2023), and DBInfo for `.cdb`; Teddy for `.dat` and `.gra`; WinGRAF for `.gra`; Report Viewer for `.plb`; SSD for `.sofistik`; ResultViewer for `.results`; and SOFiPLUS for `.dwg` with a same-basename `.dat` file. Entries are explicit external actions and never become the default opener. Reload the package after installing another release to register its applications; removed executables stop appearing immediately.
+
 - `code-lens.provider`: provided to code-lens to display Run actions above active PROG headers.
 - `background-tips.provider`: provided to background-tips to explain calculation commands.
 - `tree-view.selection`: consumed to read the selected paths for the tree-view commands (open, clean, wing-fix).
-- `open-external`: consumed to register handlers that open SOFiSTiK file types in their native applications.
+- `open-external`: consumed to register handlers that open SOFiSTiK file types in their native applications using the release resolved from the file's adjacent `sofistik.def` or the usual installed-release fallback. This automatic route remains independent of the versioned Launcher choices.
 - `pdf-view`: consumed to open and reuse PDF manual viewers with named-destination navigation.
 
 ## Contributing

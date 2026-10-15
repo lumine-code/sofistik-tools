@@ -22,7 +22,8 @@
     "language-sofistik",
     "language-text",
     "code-lens",
-    "open-external"
+    "open-external",
+    "launcher"
   ],
   "main": "./lib/main",
   "files": [

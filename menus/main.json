@@ -84,10 +84,6 @@
                       "command": "sofistik-tools:open-animator"
                     },
                     {
-                      "label": "Animator 2018",
-                      "command": "sofistik-tools:open-animator-2018"
-                    },
-                    {
                       "label": "Viewer",
                       "command": "sofistik-tools:open-viewer"
                     },

@@ -2,7 +2,7 @@ SOFiSTiK Tools composes environment discovery, keyword datasets and editor workf
 
 ## Boundaries
 
-`main.js` owns synchronous command registration, service edges and package lifetime. It creates the runtime only when a feature needs it. Providing Code Lens publishes its lightweight provider without loading environment discovery, keyword datasets or list models.
+`main.js` owns synchronous command and path-opener registration, service edges and package lifetime. It creates the runtime only when a feature needs it. Providing Code Lens publishes its lightweight provider without loading keyword datasets or list models. `path-openers.js` uses the context library's lightweight installation scan during activation and registers only executables actually present in each installed release.
 
 `commands.js` keeps command metadata beside each registered handler. A dispatch captures its editor from the event target, falling back to the active editor, and snapshots its source path, text, cursor and tree selection. Surface adapters choose editor or tree actions once. Runtime operations retain resolved environment snapshots through asynchronous work.
 
@@ -14,6 +14,7 @@ SOFiSTiK Tools composes environment discovery, keyword datasets and editor workf
 | `calculations.js`       | Save and validate all selected sources before launching WPS or SPS.                                |
 | `program-actions.js`    | Edit directive prefixes and URS tags using the shared document model.                              |
 | `applications.js`       | Map native applications to outputs and launch GUI applications through Lumine's main process.      |
+| `path-openers.js`       | Offer explicit installed-release application choices without changing automatic external handling. |
 | `surface-actions.js`    | Adapt one application action to a captured editor or tree selection and collect missing outputs.   |
 | `manual-navigation.js`  | Select module manuals, consult keyword contexts and open or reuse PDF viewers.                     |
 | `installation-index.js` | Cache and coalesce installation scans and cancel obsolete work.                                    |
@@ -33,6 +34,8 @@ Each feature resolves only its effective file targets before its first asynchron
 An activation owns its command registrations, Code Lens provider, runtime, list hosts, indexing processes and maintenance dialogs. A consumed-service disposable removes only its own provider edge; an obsolete edge cannot clear a replacement provider. Indexing generations reject late results after invalidation or disposal. Rows include their own source paths instead of deriving a path from mutable list state.
 
 Calculation guards cover both source identity and activation identity after saves and parser settlement. Deactivation cancels pending work before it launches or mutates files. Applications already launched remain independent native application sessions.
+
+Versioned path openers retain the exact executable discovered for their release, recheck it before launching, and never qualify as default openers. They launch the selected file itself without loading the runtime or rewriting its adjacent definition. Launch failures reject the explicit action so Launcher can report them. The separate `open-external` service handler retains the environment resolver's normal file-context behavior. Opener registrations belong to one activation, and a stale callback cannot launch after deactivation.
 
 ## Validation
 
