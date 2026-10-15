@@ -24,22 +24,22 @@
           "label": "SOFiSTiK Tools",
           "submenu": [
             {
-              "label": "Calculation",
+              "label": "Calculate",
               "submenu": [
                 {
-                  "label": "Calculation WPS",
+                  "label": "Whole File with WPS",
                   "command": "sofistik-tools:calculation-wps"
                 },
                 {
-                  "label": "Calculation WPS Immediately",
+                  "label": "Whole File with WPS and Close on Finish",
                   "command": "sofistik-tools:calculation-wps-immediately"
                 },
                 {
-                  "label": "Calculation WPS Current",
+                  "label": "PROG Block Above Cursor with WPS",
                   "command": "sofistik-tools:calculation-wps-current"
                 },
                 {
-                  "label": "Calculation SPS",
+                  "label": "Whole File with SPS",
                   "command": "sofistik-tools:calculation-sps"
                 }
               ]
@@ -146,7 +146,7 @@
                           "command": "sofistik-tools:open-teddy"
                         },
                         {
-                          "label": "Open Teddy Single",
+                          "label": "Open Teddy in New Window",
                           "command": "sofistik-tools:open-teddy-single"
                         },
                         {
