@@ -48,6 +48,8 @@ describe("sofistik-tools bootstrap activation", () => {
     expect(commands).toContain("sofistik-tools:toggle-examples");
     expect(commands).not.toContain("sofistik-tools:cache-examples");
     expect(commands).toContain("sofistik-tools:change-version");
+    expect(commands).not.toContain("sofistik-tools:program-all-toggle");
+    expect(commands).not.toContain("sofistik-tools:clean-1");
   });
 
   for (const { command, property } of [

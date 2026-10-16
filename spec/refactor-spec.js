@@ -327,7 +327,14 @@ describe("SOFiSTiK operation boundaries", () => {
     try {
       await lumine.commands.dispatch(editor.getElement(), "sofistik-tools:program-all-off");
       expect(editor.getText()).toBe("-PROG AQUA\nEND\n");
-      await lumine.commands.dispatch(editor.getElement(), "sofistik-tools:clean-1");
+      const tree = document.createElement("div");
+      tree.className = "tree-view";
+      lumine.workspace.getElement().appendChild(tree);
+      try {
+        await lumine.commands.dispatch(tree, "sofistik-tools:clean-1");
+      } finally {
+        tree.remove();
+      }
       expect(fs.existsSync(generated)).toBe(false);
       expect(resolve).not.toHaveBeenCalled();
     } finally {

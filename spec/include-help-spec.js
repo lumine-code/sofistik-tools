@@ -79,7 +79,7 @@ describe("SOFiSTiK include help", () => {
       const element = lumine.views.getView(editor);
 
       await lumine.commands.dispatch(element, "sofistik-tools:current-help");
-      await lumine.commands.dispatch(workspaceElement, "sofistik-tools:separately-help");
+      await lumine.commands.dispatch(element, "sofistik-tools:separately-help");
 
       expect(calls()).toEqual([
         { manual: `${module.toLowerCase()}_1.pdf`, destination: MODULES[module], reuse: true },

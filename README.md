@@ -24,7 +24,7 @@ Install [code-lens](https://github.com/lumine-code/code-lens) to display the Run
 
 ## Commands
 
-Commands available in `lumine-workspace`. Each uses the editor that dispatched it, falling back to the active editor, and declines with a notification when its grammar is not SOFiSTiK:
+Commands available in `lumine-text-editor:not([mini])`:
 
 - `sofistik-tools:current-help`: open help for current module in PDF view (reuses pane),
 - `sofistik-tools:separately-help`: open help for current module in new pane,
@@ -32,24 +32,6 @@ Commands available in `lumine-workspace`. Each uses the editor that dispatched i
 - `sofistik-tools:calculation-wps-immediately`: run calculation in WPS,
 - `sofistik-tools:calculation-wps-current`: run calculation of current program only,
 - `sofistik-tools:calculation-sps`: run calculation in SPS,
-- `sofistik-tools:open-report`: open `.plb` file in Report Viewer,
-- `sofistik-tools:save-report-as-pdf`: export report to PDF,
-- `sofistik-tools:save-pictures-as-pdf`: export pictures from report to PDF,
-- `sofistik-tools:open-protocol`: open `.prt` protocol file in editor,
-- `sofistik-tools:open-animator`: open `.cdb` in Animator,
-- `sofistik-tools:open-viewer`: open `.cdb` in Viewer (2024+) or FEA Viewer (2020-2023),
-- `sofistik-tools:open-dbinfo`: open `.cdb` in Database Info,
-- `sofistik-tools:open-ssd`: open `.sofistik` file in SSD,
-- `sofistik-tools:open-wingraf`: open `.gra` file in WinGRAF,
-- `sofistik-tools:open-result-viewer`: open `.results` file in Result Viewer,
-- `sofistik-tools:open-teddy`: open file in Teddy,
-- `sofistik-tools:open-teddy-single`: open file in Teddy (single instance),
-- `sofistik-tools:open-teddy-1`: open file in Teddy slot 1,
-- `sofistik-tools:open-teddy-2`: open file in Teddy slot 2,
-- `sofistik-tools:open-teddy-3`: open file in Teddy slot 3,
-- `sofistik-tools:open-teddy-4`: open file in Teddy slot 4,
-- `sofistik-tools:open-sofiplus`: open `.dwg` file in SOFiPLUS,
-- `sofistik-tools:export-cdb`: open CDB export dialog,
 - `sofistik-tools:export-plb-to-docx`: convert `.plb` to `.docx` (2020+),
 - `sofistik-tools:program-current-toggle`: toggle current program on/off,
 - `sofistik-tools:program-all-toggle`: toggle all programs,
@@ -61,7 +43,28 @@ Commands available in `lumine-workspace`. Each uses the editor that dispatched i
 - `sofistik-tools:program-below-toggle`: toggle programs below cursor,
 - `sofistik-tools:program-below-on`: turn ON programs below cursor,
 - `sofistik-tools:program-below-off`: turn OFF programs below cursor,
-- `sofistik-tools:clear-urs-tags`: remove all URS tags from programs,
+- `sofistik-tools:clear-urs-tags`: remove all URS tags from programs.
+
+Commands available in `lumine-text-editor:not([mini]), .tree-view`:
+
+- `sofistik-tools:open-animator`: open `.cdb` in Animator,
+- `sofistik-tools:open-report`: open `.plb` file in Report Viewer,
+- `sofistik-tools:save-report-as-pdf`: export report to PDF,
+- `sofistik-tools:save-pictures-as-pdf`: export pictures from report to PDF,
+- `sofistik-tools:open-protocol`: open `.prt` protocol file in editor,
+- `sofistik-tools:open-viewer`: open `.cdb` in Viewer (2024+) or FEA Viewer (2020-2023),
+- `sofistik-tools:open-dbinfo`: open `.cdb` in Database Info,
+- `sofistik-tools:open-ssd`: open `.sofistik` file in SSD,
+- `sofistik-tools:open-wingraf`: open `.gra` file in WinGRAF,
+- `sofistik-tools:open-result-viewer`: open `.results` file in Result Viewer,
+- `sofistik-tools:open-teddy`: open file in Teddy,
+- `sofistik-tools:open-teddy-single`: open file in Teddy (single instance),
+- `sofistik-tools:open-sofiplus`: open `.dwg` file in SOFiPLUS,
+- `sofistik-tools:export-cdb`: open CDB export dialog,
+- `sofistik-tools:open-teddy-1`: open file in Teddy slot 1,
+- `sofistik-tools:open-teddy-2`: open file in Teddy slot 2,
+- `sofistik-tools:open-teddy-3`: open file in Teddy slot 3,
+- `sofistik-tools:open-teddy-4`: open file in Teddy slot 4,
 - `sofistik-tools:check-version`: show the resolved SOFiSTiK version.
 
 Commands available in `lumine-workspace`:
@@ -92,35 +95,20 @@ Actions shown for `.sofistik-tools.example-list`:
 
 Cache actions keep their list open and rescan its selected installation.
 
-Commands available in `lumine-workspace`, acting on the tree view selection:
+Commands available in `.tree-view`:
 
-- `sofistik-tools:open-animator`: open selected `.cdb` in Animator,
-- `sofistik-tools:open-report`: open selected `.plb` in Report Viewer,
-- `sofistik-tools:save-report-as-pdf`: export selected report to PDF,
-- `sofistik-tools:save-pictures-as-pdf`: export pictures from selected report,
-- `sofistik-tools:open-protocol`: open selected `.prt` file,
-- `sofistik-tools:open-viewer`: open selected `.cdb` in Viewer,
-- `sofistik-tools:open-viewer-2025`: open selected `.cdb` in Viewer 2025,
-- `sofistik-tools:open-dbinfo`: open selected `.cdb` in Database Info,
-- `sofistik-tools:open-ssd`: open selected `.sofistik` in SSD,
-- `sofistik-tools:open-wingraf`: open selected `.gra` in WinGRAF,
-- `sofistik-tools:open-result-viewer`: open selected `.results` in Result Viewer,
-- `sofistik-tools:open-teddy`: open selected file in Teddy,
-- `sofistik-tools:open-teddy-single`: open in Teddy (single instance),
-- `sofistik-tools:open-teddy-1`: open in Teddy slot 1,
-- `sofistik-tools:open-teddy-2`: open in Teddy slot 2,
-- `sofistik-tools:open-teddy-3`: open in Teddy slot 3,
-- `sofistik-tools:open-teddy-4`: open in Teddy slot 4,
-- `sofistik-tools:open-sofiplus`: open selected `.dwg` in SOFiPLUS,
-- `sofistik-tools:export-cdb`: open CDB export for selected file,
-- `sofistik-tools:check-version`: show the resolved SOFiSTiK version,
-- `sofistik-tools:clean-1`: clean directory from files with extensions `.erg` `.prt` `.lst` `.urs` `.sdb` `.db-2` `.pl` `.$*` `.#*` `.grb` `.err` `.error_positions` `.dwl` `.dwl2` `.cfg`,
-- `sofistik-tools:clean-2`: above + `.cdi` `.cde`,
-- `sofistik-tools:clean-3`: above + `.cdb` `.sqlite`,
-- `sofistik-tools:clean-4`: above + `.plb` `.bak` `_csm.dat` `_csmlf.dat`,
 - `sofistik-tools:clean-glob`: use custom glob pattern,
+- `sofistik-tools:clean-1`: clean directory from files with extensions `.erg` `.prt` `.lst` `.urs` `.sdb` `.db-2` `.pl` `.$*` `.#*` `.grb` `.err` `.error_positions` `.dwl` `.dwl2` `.cfg`,
+- `sofistik-tools:clean-1-recursively`: clean selected folders recursively at level 1,
+- `sofistik-tools:clean-2`: above + `.cdi` `.cde`,
+- `sofistik-tools:clean-2-recursively`: clean selected folders recursively at level 2,
+- `sofistik-tools:clean-3`: above + `.cdb` `.sqlite`,
+- `sofistik-tools:clean-3-recursively`: clean selected folders recursively at level 3,
+- `sofistik-tools:clean-4`: above + `.plb` `.bak` `_csm.dat` `_csmlf.dat`,
+- `sofistik-tools:clean-4-recursively`: clean selected folders recursively at level 4,
 - `sofistik-tools:wing-fix`: fix MSCA issues in `.gra` files,
-- `sofistik-tools:wing-fix-recursively`: fix MSCA issues recursively.
+- `sofistik-tools:wing-fix-recursively`: fix MSCA issues recursively,
+- `sofistik-tools:open-viewer-2025`: open selected `.cdb` in Viewer 2025.
 
 Each `clean-n` command also has a `clean-n-recursively` variant that descends into subdirectories.
 
