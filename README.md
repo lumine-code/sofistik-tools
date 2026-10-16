@@ -32,7 +32,10 @@ Commands available in `lumine-text-editor:not([mini])`:
 - `sofistik-tools:calculation-wps-immediately`: run calculation in WPS,
 - `sofistik-tools:calculation-wps-current`: run calculation of current program only,
 - `sofistik-tools:calculation-sps`: run calculation in SPS,
-- `sofistik-tools:export-plb-to-docx`: convert `.plb` to `.docx` (2020+),
+- `sofistik-tools:export-plb-to-docx`: convert `.plb` to `.docx` (2020+).
+
+Commands available in `lumine-text-editor:not([mini]):not([readonly])`:
+
 - `sofistik-tools:program-current-toggle`: toggle current program on/off,
 - `sofistik-tools:program-all-toggle`: toggle all programs,
 - `sofistik-tools:program-all-on`: turn ON all programs,
@@ -45,7 +48,7 @@ Commands available in `lumine-text-editor:not([mini])`:
 - `sofistik-tools:program-below-off`: turn OFF programs below cursor,
 - `sofistik-tools:clear-urs-tags`: remove all URS tags from programs.
 
-Commands available in `lumine-text-editor:not([mini]), .tree-view`:
+Commands available in `lumine-text-editor:not([mini]):not(.tree-view lumine-text-editor)` and `.tree-view`:
 
 - `sofistik-tools:open-animator`: open `.cdb` in Animator,
 - `sofistik-tools:open-report`: open `.plb` file in Report Viewer,

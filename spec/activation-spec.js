@@ -51,6 +51,43 @@ describe("sofistik-tools bootstrap activation", () => {
     expect(commands).not.toContain("sofistik-tools:program-all-toggle");
     expect(commands).not.toContain("sofistik-tools:clean-1");
   });
+  it("dispatches a shared surface command once from an editor nested in a tree", async () => {
+    const tree = document.createElement("div");
+    tree.className = "tree-view";
+    const editor = lumine.workspace.buildTextEditor();
+    tree.appendChild(editor.element);
+    workspaceElement.appendChild(tree);
+    const showVersion = jasmine.createSpy("show version");
+    spyOn(mainModule, "ensureRuntime").and.resolveTo({
+      operation: () => ({ showVersionFromContext: showVersion }),
+    });
+    try {
+      await lumine.commands.dispatch(editor.element, "sofistik-tools:check-version");
+      expect(showVersion).toHaveBeenCalledTimes(1);
+    } finally {
+      editor.destroy();
+      tree.remove();
+    }
+  });
+  it("keeps source mutations out of read-only editors while retaining read operations", () => {
+    const editor = lumine.workspace.buildTextEditor();
+    editor.setText("+PROG AQUA\nEND\n");
+    editor.setReadOnly(true);
+    try {
+      for (const command of ["program-current-toggle", "program-all-off", "clear-urs-tags"])
+        expect(lumine.commands.canDispatch(editor.element, `sofistik-tools:${command}`)).toBe(
+          false,
+        );
+      expect(lumine.commands.canDispatch(editor.element, "sofistik-tools:current-help")).toBe(true);
+      expect(lumine.commands.canDispatch(editor.element, "sofistik-tools:calculation-wps")).toBe(
+        true,
+      );
+      lumine.commands.dispatch(editor.element, "sofistik-tools:program-all-off");
+      expect(editor.getText()).toBe("+PROG AQUA\nEND\n");
+    } finally {
+      editor.destroy();
+    }
+  });
 
   for (const { command, property } of [
     { command: "sofistik-tools:toggle-help", property: "helpList" },
