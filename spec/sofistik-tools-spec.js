@@ -380,21 +380,35 @@ describe("sofistik-tools", () => {
       }
     });
 
-    it("keeps the version picker tied to the source that opened it", async () => {
+    it("keeps repeated version selections tied to the source that opened the picker", async () => {
       const directory = makeTempDir();
       const filePath = path.join(directory, "model.dat");
       fs.writeFileSync(filePath, "");
       const editor = await lumine.workspace.open(filePath);
-      await lumine.commands.dispatch(editor.getElement(), "sofistik-tools:change-version");
-      const list = mainModule.versionList.selectList;
       const otherDirectory = makeTempDir();
       fs.writeFileSync(path.join(otherDirectory, "other.dat"), "");
-      await lumine.workspace.open(path.join(otherDirectory, "other.dat"));
-      await list.setItems([{ version: "2024", filePath }]);
+      const other = await lumine.workspace.open(path.join(otherDirectory, "other.dat"));
+      await lumine.workspace.open(editor);
+      await lumine.commands.dispatch(editor.getElement(), "sofistik-tools:change-version");
+      const list = mainModule.versionList.selectList;
+      await list.setKeepOpen(true);
+      lumine.workspace.getActivePane().activateItem(other, { activatePane: false });
+      await list.setItems([
+        { version: "2024", filePath },
+        { version: "2025", filePath },
+      ]);
+      await list.selectItemById("2024");
       await list.runAction("sofistik-tools:select-version");
       expect(fs.readFileSync(path.join(directory, "sofistik.def"), "utf8")).toBe(
         "SOF_VERSION = 2024\n",
       );
+      expect(mainModule.versionList.selectListHost.isVisible()).toBe(true);
+      await list.selectItemById("2025");
+      await list.runAction("sofistik-tools:select-version");
+      expect(fs.readFileSync(path.join(directory, "sofistik.def"), "utf8")).toBe(
+        "SOF_VERSION = 2025\n",
+      );
+      expect(mainModule.versionList.selectListHost.isVisible()).toBe(true);
       expect(fs.existsSync(path.join(otherDirectory, "sofistik.def"))).toBe(false);
     });
 

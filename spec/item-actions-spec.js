@@ -37,6 +37,7 @@ describe("sofistik-tools item actions", () => {
     const byCommand = new Map(actions.map((action) => [action.command, action]));
 
     expect([...byCommand.keys()].sort()).toEqual([
+      "select-list:toggle-keep-open",
       "sofistik-tools:cache-help",
       "sofistik-tools:open-ex",
       "sofistik-tools:open-help-with",
@@ -69,11 +70,12 @@ describe("sofistik-tools item actions", () => {
     expect(byCommand.has("sofistik-tools:toggle-help")).toBe(false);
   });
 
-  it("keeps only the list action without a selected manual", () => {
+  it("keeps list actions available without a selected manual", () => {
     helpList.selectList.setItems([]);
 
     expect(helpList.selectList.getAvailableActions().map((action) => action.command)).toEqual([
       "sofistik-tools:cache-help",
+      "select-list:toggle-keep-open",
     ]);
   });
 
@@ -85,7 +87,10 @@ describe("sofistik-tools item actions", () => {
     list.selectList.setItems([]);
 
     const actions = list.selectList.getAvailableActions();
-    expect(actions.map((action) => action.command)).toEqual(["sofistik-tools:cache-examples"]);
+    expect(actions.map((action) => action.command)).toEqual([
+      "sofistik-tools:cache-examples",
+      "select-list:toggle-keep-open",
+    ]);
     expect(actions[0].description).toBe(
       "Index the examples again after installing another release.",
     );
