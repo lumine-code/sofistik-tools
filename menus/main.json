@@ -6,7 +6,7 @@
         {
           "label": "SOFiSTiK Documentation…",
           "command": "sofistik-tools:toggle-help",
-          "group": "examples",
+          "group": "references",
           "order": 20
         },
         {
