@@ -52,7 +52,12 @@ describe("SOFiSTiK operation boundaries", () => {
   afterEach(async () => {
     for (const editor of editors) if (!editor.isDestroyed()) editor.destroy();
     await lumine.packages.deactivatePackage("sofistik-tools");
-    await fs.promises.rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+    await fs.promises.rm(directory, {
+      recursive: true,
+      force: true,
+      maxRetries: 10,
+      retryDelay: 50,
+    });
   });
 
   for (const fixture of corpus.cases) {

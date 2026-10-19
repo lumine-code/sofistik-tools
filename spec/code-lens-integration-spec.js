@@ -95,7 +95,12 @@ describe("SOFiSTiK Run links in the code-lens frontend", () => {
     lumine.config.unset("sofistik-tools.inlineActions");
     lumine.config.unset("sofistik-tools.inlineActions", { scopeSelector: ".source.sofistik" });
     if (path.dirname(directory) !== os.tmpdir()) throw new Error("Unexpected fixture directory");
-    await fs.promises.rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+    await fs.promises.rm(directory, {
+      recursive: true,
+      force: true,
+      maxRetries: 10,
+      retryDelay: 50,
+    });
   });
 
   it("registers the real provider and renders an actionable Run link above each +PROG", () => {
