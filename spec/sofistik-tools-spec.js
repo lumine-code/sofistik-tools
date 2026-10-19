@@ -84,19 +84,35 @@ describe("sofistik-tools", () => {
     mainModule = await pack.mainModule.ensureRuntime();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     // The package is activated once and cached, so stand-in providers outlive
     // the spec that set them unless cleared.
     mainModule.environmentProvider = null;
     mainModule.dataProvider = null;
-    for (const dir of tempDirs) {
-      try {
-        // Retries because Windows keeps a directory non-empty until the last handle on a
-        // child closes, and `force` swallows only ENOENT.
-        fs.rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
-      } catch {
-        // Windows can refuse to delete busy directories.
+    for (const editor of lumine.workspace.getTextEditors()) {
+      const filePath = editor.getPath();
+      if (
+        filePath &&
+        tempDirs.some((directory) => {
+          const relative = path.relative(directory, filePath);
+          return (
+            relative !== "" &&
+            relative !== ".." &&
+            !relative.startsWith(`..${path.sep}`) &&
+            !path.isAbsolute(relative)
+          );
+        })
+      ) {
+        editor.destroy();
       }
+    }
+    for (const dir of tempDirs) {
+      await fs.promises.rm(dir, {
+        recursive: true,
+        force: true,
+        maxRetries: 10,
+        retryDelay: 50,
+      });
     }
   });
 

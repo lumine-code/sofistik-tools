@@ -64,11 +64,16 @@ describe("SOFiSTiK include help", () => {
     spyOn(runtime, "getViewer");
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     for (const editor of editors) editor.destroy();
     runtime.environmentProvider = null;
     runtime.dataProvider = null;
-    fs.rmSync(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+    await fs.promises.rm(directory, {
+      recursive: true,
+      force: true,
+      maxRetries: 10,
+      retryDelay: 50,
+    });
   });
 
   for (const [filename, module] of INCLUDES) {

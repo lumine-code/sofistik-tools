@@ -46,7 +46,12 @@ describe("SOFiSTiK program code lenses", () => {
     await lumine.packages.deactivatePackage("sofistik-tools");
     lumine.config.unset("sofistik-tools.inlineActions");
     lumine.config.unset("sofistik-tools.inlineActions", { scopeSelector: ".source.sofistik" });
-    fs.rmSync(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+    await fs.promises.rm(directory, {
+      recursive: true,
+      force: true,
+      maxRetries: 10,
+      retryDelay: 50,
+    });
   });
 
   it("finds only complete active headers outside comments, strings, text and macro definitions", async () => {
