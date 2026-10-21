@@ -65,7 +65,10 @@ describe("SOFiSTiK operation boundaries", () => {
       const editor = await openSource("model.dat", fixture.source);
       const { programHeaders } = require("../lib/document-structure");
       expect(
-        programHeaders(editor).map((directive) => [directive.module.toUpperCase(), directive.row]),
+        (await programHeaders(editor)).map((directive) => [
+          directive.module.toUpperCase(),
+          directive.row,
+        ]),
       ).toEqual(fixture.programs.map((program) => [program.name, program.line]));
     });
   }

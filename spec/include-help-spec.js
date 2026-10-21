@@ -96,6 +96,7 @@ describe("SOFiSTiK include help", () => {
       const editor = await openSource(filename, `${MODULES[module]} 1\n`);
       editor.setCursorBufferPosition([0, Infinity]);
       const target = lumine.views.getView(editor);
+      const help = spyOn(runtime, "currentHelp").and.callThrough();
       for (const altKey of [false, true]) {
         const event = new KeyboardEvent("keydown", {
           key: "F6",
@@ -107,6 +108,8 @@ describe("SOFiSTiK include help", () => {
         Object.defineProperty(event, "target", { value: target });
         lumine.keymaps.handleKeyboardEvent(event);
       }
+      await Promise.all(help.calls.all().map((call) => call.returnValue));
+      expect(help).toHaveBeenCalledTimes(2);
 
       expect(calls()).toEqual([
         { manual: `${module.toLowerCase()}_1.pdf`, destination: MODULES[module], reuse: true },
@@ -123,7 +126,7 @@ describe("SOFiSTiK include help", () => {
       const editor = await openSource("aqa.include", `CONC 1\nEND\n${header}\nLC 1\nEND\n`);
       editor.setCursorBufferPosition([3, Infinity]);
 
-      runtime.currentHelp(1);
+      await runtime.currentHelp(1);
 
       expect(calls()).toEqual([{ manual: "sofiload_1.pdf", destination: "LC", reuse: true }]);
     });
@@ -133,7 +136,7 @@ describe("SOFiSTiK include help", () => {
     const editor = await openSource("aqa.include", "CONC 1\nEND\n$PROG SOFILOAD\n\n");
     editor.setCursorBufferPosition([3, 0]);
 
-    runtime.currentHelp(1);
+    await runtime.currentHelp(1);
 
     expect(calls()).toEqual([{ manual: "sofiload_1.pdf", destination: null, reuse: true }]);
   });
@@ -144,7 +147,7 @@ describe("SOFiSTiK include help", () => {
       editor.setCursorBufferPosition([3, Infinity]);
       const warning = spyOn(lumine.notifications, "addWarning");
 
-      runtime.currentHelp(1);
+      await runtime.currentHelp(1);
 
       expect(runtime.getViewer).not.toHaveBeenCalled();
       expect(warning).toHaveBeenCalledWith("No applicable SOFiSTiK module above the cursor");
@@ -156,7 +159,7 @@ describe("SOFiSTiK include help", () => {
     editor.setCursorBufferPosition([2, Infinity]);
     const warning = spyOn(lumine.notifications, "addWarning");
 
-    runtime.currentHelp(1);
+    await runtime.currentHelp(1);
 
     expect(runtime.getViewer).not.toHaveBeenCalled();
     expect(warning).toHaveBeenCalledWith('Cannot find the manual for program "UNKNOWN"');
@@ -166,7 +169,7 @@ describe("SOFiSTiK include help", () => {
     const editor = await openSource("aqa.include", "CONC 1\nEND\nEND\nCHAPTER Heading\n\n");
     editor.setCursorBufferPosition([4, 0]);
 
-    runtime.currentHelp(1);
+    await runtime.currentHelp(1);
 
     expect(calls()).toEqual([{ manual: "aqua_1.pdf", destination: "CONC", reuse: true }]);
   });
@@ -179,7 +182,7 @@ describe("SOFiSTiK include help", () => {
     );
     editor.setCursorBufferPosition([7, 0]);
 
-    runtime.currentHelp(1);
+    await runtime.currentHelp(1);
 
     expect(calls()).toEqual([{ manual: "aqua_1.pdf", destination: "CONC", reuse: true }]);
   });
@@ -205,7 +208,7 @@ describe("SOFiSTiK include help", () => {
     expect(editor.getGrammar().scopeName).toBe("source.sofistik.include.sofiload");
     editor.setCursorBufferPosition([0, Infinity]);
 
-    runtime.currentHelp(1);
+    await runtime.currentHelp(1);
 
     expect(calls()).toEqual([{ manual: "sofiload_1.pdf", destination: "LC", reuse: true }]);
   });

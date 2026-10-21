@@ -73,7 +73,7 @@ describe("SOFiSTiK native runtime loading", () => {
     expect(await main.ensureRuntime()).toBe(main.runtime);
   });
 
-  it("keeps consecutive source edits synchronous without importing the optional runtime", async () => {
+  it("applies consecutive source edits without importing the optional runtime", async () => {
     await lumine.packages.activatePackage("language-sofistik");
     editor.setText("+PROG AQUA\nEND\n");
     lumine.grammars.assignLanguageMode(editor.getBuffer(), "source.sofistik");
@@ -81,9 +81,9 @@ describe("SOFiSTiK native runtime loading", () => {
     spyOn(main, "importRuntime").and.callThrough();
     const toggle = () =>
       lumine.commands.dispatch(editor.getElement(), "sofistik-tools:program-all-toggle");
-    toggle();
+    await toggle();
     expect(editor.lineTextForBufferRow(0)).toBe("-PROG AQUA");
-    toggle();
+    await toggle();
     expect(editor.lineTextForBufferRow(0)).toBe("+PROG AQUA");
     expect(main.importRuntime).not.toHaveBeenCalled();
     expect(main.runtime).toBeNull();

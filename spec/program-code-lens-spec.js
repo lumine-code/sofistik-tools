@@ -234,13 +234,15 @@ describe("SOFiSTiK program code lenses", () => {
     const lens = (await provider.codeLenses(editor))[0];
     const other = await openEditor("+PROG SOFILOAD\nEND\n");
     expect(lumine.workspace.getActiveTextEditor()).toBe(other);
-    let finishSave;
-    const save = spyOn(editor, "save").and.returnValue(
-      new Promise((resolve) => {
-        finishSave = resolve;
-      }),
-    );
+    let finishSave, savingStarted;
+    const saving = new Promise((resolve) => (savingStarted = resolve));
+    const pendingSave = new Promise((resolve) => (finishSave = resolve));
+    const save = spyOn(editor, "save").and.callFake(() => {
+      savingStarted();
+      return pendingSave;
+    });
     const running = lens.execute();
+    await saving;
     expect(save).toHaveBeenCalledTimes(1);
     expect(launch).not.toHaveBeenCalled();
     finishSave();

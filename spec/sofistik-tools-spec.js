@@ -389,7 +389,7 @@ describe("sofistik-tools", () => {
       const previousPaths = lumine.project.getPaths();
       lumine.project.setPaths([projectPath]);
       try {
-        mainModule.currentHelp(1);
+        await mainModule.currentHelp(1);
         expect(viewer.calls.mostRecent().args[0]).toBe(path.join(installation, "aqua_0.pdf"));
       } finally {
         lumine.project.setPaths(previousPaths);
@@ -994,11 +994,11 @@ describe("sofistik-tools", () => {
       await openBelowProg("AQUA");
 
       useLanguage("en");
-      mainModule.currentHelp(1);
+      await mainModule.currentHelp(1);
       expect(calls.pop().fileName).toBe("aqua_1.pdf");
 
       useLanguage("de");
-      mainModule.currentHelp(1);
+      await mainModule.currentHelp(1);
       expect(calls.pop().fileName).toBe("aqua_0.pdf");
     });
 
@@ -1008,7 +1008,7 @@ describe("sofistik-tools", () => {
       await openBelowProg("BEAM");
       useLanguage("en");
 
-      mainModule.currentHelp(1);
+      await mainModule.currentHelp(1);
 
       expect(calls.pop().fileName).toBe("beam.pdf");
     });
@@ -1021,7 +1021,7 @@ describe("sofistik-tools", () => {
       await openBelowProg("TUNARS");
       useLanguage("en");
 
-      mainModule.currentHelp(1);
+      await mainModule.currentHelp(1);
 
       expect(calls.pop().fileName).toBe("tunars_0.pdf");
     });
@@ -1032,7 +1032,7 @@ describe("sofistik-tools", () => {
       await openBelowProg("AQUA");
       useLanguage(undefined);
 
-      mainModule.currentHelp(1);
+      await mainModule.currentHelp(1);
 
       expect(calls.pop().fileName).toBe("aqua_1.pdf");
     });
@@ -1043,7 +1043,7 @@ describe("sofistik-tools", () => {
       await openBelowProg("DBINFO");
       const before = lumine.notifications.getNotifications().length;
 
-      mainModule.currentHelp(1);
+      await mainModule.currentHelp(1);
 
       const notifications = lumine.notifications.getNotifications();
       expect(notifications.length).toBe(before + 1);
@@ -1058,7 +1058,7 @@ describe("sofistik-tools", () => {
       editor.setCursorBufferPosition([0, 0]);
       const before = lumine.notifications.getNotifications().length;
 
-      mainModule.currentHelp(1);
+      await mainModule.currentHelp(1);
 
       // The command is in the application menu, which has no enabled state:
       // doing nothing silently leaves the user with no way to tell why.
@@ -1105,7 +1105,7 @@ describe("sofistik-tools", () => {
         setFile: () => {},
       });
 
-      mainModule.currentHelp(1);
+      await mainModule.currentHelp(1);
 
       expect(calls.length).toBe(1);
       expect(calls[0].dest).toBe("MAT");
@@ -1118,7 +1118,7 @@ describe("sofistik-tools", () => {
       });
       mainModule.dataProvider = { forRelease };
       spyOn(mainModule, "getViewer");
-      mainModule.currentHelp(1);
+      await mainModule.currentHelp(1);
       expect(forRelease).toHaveBeenCalledWith("2026", "en");
     });
 
@@ -1135,7 +1135,7 @@ describe("sofistik-tools", () => {
       // pdf-view's own opener matches a `.pdf` URI with a hash on it, so the
       // destination has to survive the trip through the workspace rather than
       // being dropped for the service being absent.
-      mainModule.currentHelp(1);
+      await mainModule.currentHelp(1);
 
       expect(opened.length).toBe(1);
       expect(opened[0]).toBe(pdfURI(path.join(dir, "aqua_1.pdf"), "MAT"));
@@ -1149,7 +1149,7 @@ describe("sofistik-tools", () => {
       );
       mainModule.dataProvider = { forRelease: () => ({ getModuleCommands: () => [] }) };
 
-      expect(() => mainModule.currentHelp(1)).not.toThrow();
+      await expectAsync(mainModule.currentHelp(1)).toBeResolved();
 
       expect(calls.length).toBe(1);
       expect(calls[0].dest).toBe(null);
@@ -1163,7 +1163,7 @@ describe("sofistik-tools", () => {
       );
       mainModule.dataProvider = { forRelease: () => null };
 
-      expect(() => mainModule.currentHelp(1)).not.toThrow();
+      await expectAsync(mainModule.currentHelp(1)).toBeResolved();
 
       expect(calls.length).toBe(1);
       expect(calls[0].dest).toBe(null);
