@@ -80,11 +80,11 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "eslint": "^10.12.0",
+    "eslint": "^10.13.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-n": "^18.4.1",
+    "eslint-plugin-n": "^18.5.0",
     "globals": "^17.13.0",
-    "prettier": "^3.9.9"
+    "prettier": "^3.9.10"
   },
   "dependencies": {
     "@lumine-code/sofistik-schema": "github:lumine-code/sofistik-schema#c86b746edb77f3a9e1a3b89f245831d5bbd8ddc4",
