@@ -73,6 +73,23 @@ describe("SOFiSTiK operation boundaries", () => {
     });
   }
 
+  it("captures roots and removes only the current PROG header URS without reading the full source", async () => {
+    const editor = await openSource(
+      "model.dat",
+      "+PROG AQUA URS:1; +SYS echo URS:9\r\n+PROG ASE\r\nEND\r\n",
+    );
+    const reading = spyOn(editor, "getText").and.throwError("Whole source read");
+    spyOn(editor, "lineTextForBufferRow").and.throwError("Whole header read");
+    const { editorContext } = require("../lib/command-context");
+    const context = editorContext(editor);
+    expect(context.snapshot.equals(editor.getBuffer().getTextSnapshot())).toBe(true);
+    await runtime.operation(context).cleanUrsTags();
+    expect(editor.getBuffer().getTextSnapshot().toString()).toBe(
+      "+PROG AQUA; +SYS echo URS:9\r\n+PROG ASE\r\nEND\r\n",
+    );
+    expect(reading).not.toHaveBeenCalled();
+  });
+
   it("runs the dispatch editor and frozen release after save changes focus and definitions", async () => {
     const originalInstall = install("2024");
     install("2026");

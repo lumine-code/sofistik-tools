@@ -36,4 +36,20 @@ describe("TextView", () => {
     expect(textView.panel).toBeNull();
     expect(textView.miniEditor.isDestroyed()).toBe(true);
   });
+
+  it("keeps an oversized input editable and checks its metadata before confirming", () => {
+    const selected = jasmine.createSpy("selected");
+    textView = new TextView("x".repeat(65537), false, false, "Pattern");
+    textView.attach(selected);
+    const read = spyOn(textView.miniEditor, "getText").and.throwError("Oversized input read");
+    lumine.commands.dispatch(textView.element, "core:confirm");
+    expect(read).not.toHaveBeenCalled();
+    expect(selected).not.toHaveBeenCalled();
+    expect(textView.closed).not.toBe(true);
+    expect(textView.errorMessage.textContent).toContain("64 Ki");
+    textView.miniEditor.setText("żółć/😀/*.gra");
+    read.and.callThrough();
+    lumine.commands.dispatch(textView.element, "core:confirm");
+    expect(selected).toHaveBeenCalledWith("żółć/😀/*.gra");
+  });
 });

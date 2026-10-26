@@ -2,6 +2,10 @@ SOFiSTiK Tools composes environment discovery, keyword datasets and editor workf
 
 ## Boundaries
 
+Source operations retain immutable text snapshots and buffer revisions. Directive, calculation-child and manual scans read bounded chunks, including within a single very long line, and yield after approximately 4 ms; syntax workers use the same directive state machine. Returned positions follow the editor's physical LF/CRLF rows, so a lone CR does not invent a new buffer row. URS cleanup is confined to its own PROG header, including when another directive follows a semicolon. Switching source, grammar or syntax lifetime cancels pending results.
+
+Structure metadata has explicit limits of 100,000 returned records, 200,000 lexical inspections and 64 Ki UTF-16 units per identifier or child path. Oversized metadata is rejected without changing source. Command inputs are checked against 64 Ki UTF-16 units before reading, and adjacent `sofistik.def` configuration is limited to 1 MiB with a bounded read that detects concurrent growth. These limits do not limit editing or saving a source document. WING cleanup operates on a private source buffer, preserves Unicode and line endings, and writes only after every transformation succeeds and the file's identity and timestamps still match its initial state.
+
 `main.js` owns synchronous command and path-opener registration, service edges and package lifetime. It creates the runtime only when a feature needs it. Providing Code Lens publishes its lightweight provider without loading keyword datasets or list models. `path-openers.js` uses the context library's lightweight installation scan during activation and registers only executables actually present in each installed release.
 
 `commands.js` keeps command metadata beside each registered handler. A dispatch captures its editor from the event target, falling back to the active editor, and snapshots its source path, text, cursor and tree selection. Surface adapters choose editor or tree actions once. Runtime operations retain resolved environment snapshots through asynchronous work.

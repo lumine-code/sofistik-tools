@@ -21,22 +21,6 @@ describe("sofistik-tools", () => {
     return dir;
   }
 
-  function waitFor(condition, timeout = 5000) {
-    return new Promise((resolve, reject) => {
-      const start = Date.now();
-      const check = () => {
-        if (condition()) {
-          resolve();
-        } else if (Date.now() - start > timeout) {
-          reject(new Error("Timed out waiting for condition"));
-        } else {
-          setImmediate(check);
-        }
-      };
-      check();
-    });
-  }
-
   // Stand-in for the direct library resolver used by native launch tests.
   function useEnvironment(root, version = "2026", language = "en") {
     mainModule.environmentProvider = {
@@ -952,13 +936,31 @@ describe("sofistik-tools", () => {
       const dir = makeTempDir();
       const file = path.join(dir, "plot.gra");
       fs.writeFileSync(file, "HEAD test MSCA YES\nAND more\n DB something\n");
-      mainModule.wingFix([dir], "*.gra");
-      await waitFor(() => fs.readFileSync(file, "utf8").includes("MSCA NO"));
+      const result = await mainModule.wingFix([dir], "*.gra");
+      expect(result.failed).toEqual([]);
       const content = fs.readFileSync(file, "utf8");
       expect(content).toContain("HEAD test\n");
       expect(content).toContain("AND more MSCA NO\n");
       expect(content).toContain("$ DB something\n");
     });
+  });
+
+  it("leaves the original WING file intact if a later transformation fails", async () => {
+    const dir = makeTempDir(),
+      file = path.join(dir, "plot.gra");
+    const original = "HEAD test MSCA YES\r\nAND more\r\n DB żółć😀\r\n";
+    fs.writeFileSync(file, original);
+    const prototype = require("lumine").TextBuffer.prototype;
+    const replace = prototype.replaceAllMatches;
+    let calls = 0;
+    spyOn(prototype, "replaceAllMatches").and.callFake(function (...args) {
+      if (++calls === 2) throw new Error("Injected final-stage failure");
+      return replace.apply(this, args);
+    });
+    const result = await mainModule.wingFix([dir], "*.gra");
+    expect(result.changed).toEqual([]);
+    expect(result.failed[0].message).toBe("Injected final-stage failure");
+    expect(fs.readFileSync(file, "utf8")).toBe(original);
   });
 
   describe("current help", () => {
