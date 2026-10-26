@@ -220,13 +220,15 @@ describe("SOFiSTiK include help", () => {
     const warning = spyOn(lumine.notifications, "addWarning");
     const element = lumine.views.getView(editor);
 
+    expect(lumine.commands.canDispatch(element, "sofistik-tools:calculation-wps")).toBeFalse();
+    expect(lumine.commands.canDispatch(element, "sofistik-tools:program-all-toggle")).toBeFalse();
     await lumine.commands.dispatch(element, "sofistik-tools:calculation-wps");
     await lumine.commands.dispatch(element, "sofistik-tools:program-all-toggle");
 
     expect(calculate).not.toHaveBeenCalled();
     expect(changePrograms).not.toHaveBeenCalled();
     expect(editor.getText()).toBe("+PROG AQUA\nEND\n");
-    expect(warning.calls.count()).toBe(2);
+    expect(warning).not.toHaveBeenCalled();
   });
 
   it("refuses a generic include file with no declared module", async () => {

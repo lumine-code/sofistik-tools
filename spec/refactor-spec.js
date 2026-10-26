@@ -280,9 +280,12 @@ describe("SOFiSTiK operation boundaries", () => {
     const resolve = spyOn(runtime.ensureEnvironment(), "resolve").and.throwError(
       "Unexpected environment lookup",
     );
+    expect(
+      lumine.commands.canDispatch(editor.getElement(), "sofistik-tools:calculation-wps"),
+    ).toBeFalse();
     await lumine.commands.dispatch(editor.getElement(), "sofistik-tools:calculation-wps");
     expect(resolve).not.toHaveBeenCalled();
-    expect(warnings()).toContain("Not a SOFiSTiK file");
+    expect(warnings()).toBe("");
   });
 
   it("ignores an invalid definition beside an unrelated tree selection when calculating", async () => {

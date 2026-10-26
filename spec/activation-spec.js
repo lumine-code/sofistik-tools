@@ -69,8 +69,13 @@ describe("sofistik-tools bootstrap activation", () => {
       tree.remove();
     }
   });
-  it("keeps source mutations out of read-only editors while retaining read operations", () => {
+  it("keeps source mutations out of read-only editors while retaining read operations", async () => {
+    const language = await lumine.packages.activatePackage(
+      path.join(__dirname, "..", "..", "language-sofistik"),
+    );
+    await language.resourceLoadPromise;
     const editor = lumine.workspace.buildTextEditor();
+    editor.setGrammar(lumine.grammars.grammarForScopeName("source.sofistik"));
     editor.setText("+PROG AQUA\nEND\n");
     editor.setReadOnly(true);
     try {
