@@ -99,6 +99,19 @@ describe("SOFiSTiK program code lenses", () => {
     expect(await provider.codeLenses(editor)).toBeNull();
   });
 
+  it("continues budgeted scans while the renderer UI clock is controlled", async () => {
+    const source = require("lumine").TextBuffer.createTextSnapshot("+PROG AQUA\n+PROG ASE");
+    let time = 0;
+    spyOn(performance, "now").and.callFake(() => (time += 5));
+    const { collect } = require("../lib/source-traversal");
+    const { scanSourceDirectives } = require("../lib/source-structure");
+    const result = await collect(
+      scanSourceDirectives({ scopeDescriptorForBufferPosition: () => ({ scopes: [] }) }, source),
+      source,
+    );
+    expect(result.map((record) => record.module)).toEqual(["AQUA", "ASE"]);
+  });
+
   it("honours global and scoped settings and refuses previously displayed actions when disabled", async () => {
     const editor = await openEditor("+PROG AQUA\nEND\n");
     const lens = (await provider.codeLenses(editor))[0];
