@@ -1,14 +1,7 @@
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
-const { pathToFileURL } = require("url");
 const { SofistikContextResolver } = require("@lumine-code/sofistik-context");
-
-function pdfURI(filePath, destination) {
-  const uri = pathToFileURL(filePath);
-  if (destination) uri.hash = `nameddest=${destination}`;
-  return uri.href;
-}
 
 const LANGUAGE_SOFISTIK_PATH = path.join(__dirname, "..", "..", "language-sofistik");
 
@@ -1097,20 +1090,18 @@ describe("sofistik-tools", () => {
       return dir;
     }
 
-    it("opens the manual at the command nearest above the cursor", async () => {
+    it("opens the manual at the page containing the command nearest above the cursor", async () => {
       await installManualAndEditor("+prog aqua\n  norm en\n  mat 1\n", [2, 6]);
       const calls = [];
       mainModule.owner.consumePdfView({
-        getViewerByTag: () => null,
         open: (filePath, options) => calls.push(options),
-        scrollToDestination: () => {},
-        setFile: () => {},
       });
 
       await mainModule.currentHelp(1);
 
       expect(calls.length).toBe(1);
       expect(calls[0].dest).toBe("MAT");
+      expect(calls[0].destinationMode).toBe("page");
     });
 
     it("requests manual keyword data for the same project year as the installation", async () => {
@@ -1124,23 +1115,43 @@ describe("sofistik-tools", () => {
       expect(forRelease).toHaveBeenCalledWith("2026", "en");
     });
 
-    it("keeps the destination when the pdf-view service is not here yet", async () => {
-      const dir = await installManualAndEditor("+prog aqua\n  mat 1\n", [1, 6]);
-      // Spy only once the editor is open — opening it goes through the very
-      // method being stubbed.
-      const opened = [];
-      spyOn(lumine.workspace, "open").and.callFake((uri) => {
-        opened.push(uri);
-        return Promise.resolve();
-      });
+    it("reports a missing PDF service without falling back to a workspace opener", async () => {
+      await installManualAndEditor("+prog aqua\n  mat 1\n", [1, 6]);
+      mainModule.pdfViewService = null;
+      const open = spyOn(lumine.workspace, "open").and.resolveTo();
+      const activate = spyOn(lumine.packages, "activatePackage");
 
-      // pdf-view's own opener matches a `.pdf` URI with a hash on it, so the
-      // destination has to survive the trip through the workspace rather than
-      // being dropped for the service being absent.
-      await mainModule.currentHelp(1);
+      await expectAsync(mainModule.currentHelp(1)).toBeRejectedWithError(
+        "The PDF view service is not available.",
+      );
 
-      expect(opened.length).toBe(1);
-      expect(opened[0]).toBe(pdfURI(path.join(dir, "aqua_1.pdf"), "MAT"));
+      expect(open).not.toHaveBeenCalled();
+      expect(activate).not.toHaveBeenCalled();
+    });
+
+    it("waits for manual opening and propagates a PDF service failure", async () => {
+      await installManualAndEditor("+prog aqua\n  mat 1\n", [1, 6]);
+      const failure = new Error("Cannot read the manual.");
+      const open = jasmine.createSpy("open PDF").and.rejectWith(failure);
+      mainModule.owner.consumePdfView({ open });
+
+      await expectAsync(mainModule.currentHelp(1)).toBeRejectedWith(failure);
+
+      expect(open).toHaveBeenCalledTimes(1);
+      expect(open.calls.mostRecent().args[1].dest).toBe("MAT");
+    });
+
+    it("propagates a PDF service failure when no destination is available", async () => {
+      await installManualAndEditor("+prog aqua\n  mat 1\n", [1, 6]);
+      mainModule.dataProvider = { forRelease: () => ({ getModuleCommands: () => [] }) };
+      const failure = new Error("Cannot read the manual.");
+      const open = jasmine.createSpy("open PDF").and.rejectWith(failure);
+      mainModule.owner.consumePdfView({ open });
+
+      await expectAsync(mainModule.currentHelp(1)).toBeRejectedWith(failure);
+
+      expect(open).toHaveBeenCalledTimes(1);
+      expect(open.calls.mostRecent().args[1].dest).toBe(null);
     });
 
     it("opens without a destination when the dataset lacks the selected module", async () => {
@@ -1177,81 +1188,50 @@ describe("sofistik-tools", () => {
       mainModule.pdfViewService = null;
     });
 
-    it("opens a new tagged viewer through the pdf-view service", () => {
-      const calls = [];
-      mainModule.owner.consumePdfView({
-        getViewerByTag: () => null,
-        open: (filePath, options) => calls.push({ filePath, options }),
-        scrollToDestination: () => {},
-        setFile: () => {},
+    for (const reuse of [true, false]) {
+      it(`${reuse ? "reuses" : "creates"} a tagged help viewer with one PDF service operation`, async () => {
+        const viewer = {};
+        const open = jasmine.createSpy("open PDF").and.resolveTo(viewer);
+        mainModule.owner.consumePdfView({ open });
+        const workspaceOpen = spyOn(lumine.workspace, "open");
+
+        await expectAsync(mainModule.getViewer("C:\\docs\\aqua.pdf", "LC", reuse)).toBeResolvedTo(
+          viewer,
+        );
+
+        expect(open).toHaveBeenCalledOnceWith("C:\\docs\\aqua.pdf", {
+          tag: "SOFiSTiK",
+          reuse,
+          dest: "LC",
+          destinationMode: "page",
+          split: "right",
+          activatePane: false,
+          signal: mainModule.abortController.signal,
+        });
+        expect(workspaceOpen).not.toHaveBeenCalled();
       });
-      mainModule.getViewer("C:\\docs\\aqua.pdf", "LC", true);
-      expect(calls.length).toBe(1);
-      expect(calls[0].filePath).toBe("C:\\docs\\aqua.pdf");
-      expect(calls[0].options.dest).toBe("LC");
-      expect(calls[0].options.tag).toBe("SOFiSTiK");
-      expect(calls[0].options.split).toBe("right");
+    }
+
+    it("rejects when the PDF service is unavailable", async () => {
+      mainModule.pdfViewService = null;
+      const open = spyOn(lumine.workspace, "open");
+
+      await expectAsync(
+        mainModule.getViewer("C:\\docs\\aqua.pdf", "LC", true),
+      ).toBeRejectedWithError("The PDF view service is not available.");
+
+      expect(open).not.toHaveBeenCalled();
     });
 
-    it("scrolls an existing viewer showing the same file", () => {
-      const scrolls = [];
-      const viewer = {
-        getPath: () => "C:\\docs\\aqua.pdf",
-        getURI: () => "C:\\docs\\aqua.pdf",
-      };
-      mainModule.owner.consumePdfView({
-        getViewerByTag: (tag) => (tag === "SOFiSTiK" ? viewer : null),
-        open: () => {},
-        scrollToDestination: (target, dest) => scrolls.push({ target, dest }),
-        setFile: () => {},
-      });
-      spyOn(lumine.workspace, "open");
-      mainModule.getViewer("C:\\docs\\aqua.pdf", "LC", true);
-      expect(scrolls).toEqual([{ target: viewer, dest: "LC" }]);
-    });
+    it("returns an asynchronous PDF service failure to its caller", async () => {
+      const failure = new Error("Cannot read the manual.");
+      const open = jasmine.createSpy("open PDF").and.rejectWith(failure);
+      mainModule.owner.consumePdfView({ open });
 
-    it("swaps the file of an existing viewer showing another manual", () => {
-      const swaps = [];
-      const viewer = {
-        getPath: () => "C:\\docs\\ase.pdf",
-        getURI: () => "C:\\docs\\ase.pdf",
-      };
-      mainModule.owner.consumePdfView({
-        getViewerByTag: () => viewer,
-        open: () => {},
-        scrollToDestination: () => {},
-        setFile: (target, filePath, dest, tag) => swaps.push({ target, filePath, dest, tag }),
-      });
-      spyOn(lumine.workspace, "open");
-      mainModule.getViewer("C:\\docs\\aqua.pdf", "LC", true);
-      expect(swaps).toEqual([
-        { target: viewer, filePath: "C:\\docs\\aqua.pdf", dest: "LC", tag: "SOFiSTiK" },
-      ]);
-    });
-
-    it("uses distinct tags for separate viewers", () => {
-      const calls = [];
-      mainModule.owner.consumePdfView({
-        getViewerByTag: () => null,
-        open: (filePath, options) => calls.push(options),
-        scrollToDestination: () => {},
-        setFile: () => {},
-      });
-      mainModule.getViewer("C:\\docs\\aqua.pdf", null, false);
-      mainModule.getViewer("C:\\docs\\aqua.pdf", null, false);
-      expect(calls.length).toBe(2);
-      expect(calls[0].tag).not.toBe("SOFiSTiK");
-      expect(calls[0].tag).not.toBe(calls[1].tag);
-    });
-
-    it("falls back to a plain workspace open without the service", () => {
-      const opened = [];
-      spyOn(lumine.workspace, "open").and.callFake((uri) => {
-        opened.push(uri);
-        return Promise.resolve();
-      });
-      mainModule.getViewer("C:\\docs\\aqua.pdf", "LC", true);
-      expect(opened).toEqual([pdfURI("C:\\docs\\aqua.pdf", "LC")]);
+      await expectAsync(mainModule.getViewer("C:\\docs\\aqua.pdf", "LC", true)).toBeRejectedWith(
+        failure,
+      );
+      expect(open).toHaveBeenCalledTimes(1);
     });
   });
 

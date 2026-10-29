@@ -1,8 +1,9 @@
 describe("SOFiSTiK service and command lifetime", () => {
   let main, hub, consumers, providers, extra, external;
   const definitions = [
-    ["tree-view.selection", "consumeTreeViewSelection", "treeView"],
-    ["pdf-view", "consumePdfView", "pdfViewService"],
+    ["tree-view.selection", "consumeTreeViewSelection", "treeView", "1.0.0"],
+    ["pdf-view", "consumePdfView", "pdfViewService", "2.0.0"],
+    ["launcher", "consumeLauncher", "launcherService", "1.1.0"],
   ];
   beforeEach(async () => {
     for (const name of ["openPath", "openExternal", "openApplication", "showItemInFolder"])
@@ -31,22 +32,22 @@ describe("SOFiSTiK service and command lifetime", () => {
     await lumine.packages.deactivatePackage("sofistik-tools");
     await lumine.packages.deactivatePackage("open-external");
   });
-  for (const [name, method, field] of definitions) {
+  for (const [name, method, field, version] of definitions) {
     it(`keeps shared ${name} payload while one actual Hub edge remains`, () => {
-      const first = hub.consume(name, "^1.0.0", (payload) => main[method](payload));
+      const first = hub.consume(name, `^${version}`, (payload) => main[method](payload));
       consumers.push(first);
       const payload = {};
-      providers.push(hub.provide(name, "1.0.0", payload));
-      consumers.push(hub.consume(name, "^1.0.0", (value) => main[method](value)));
+      providers.push(hub.provide(name, version, payload));
+      consumers.push(hub.consume(name, `^${version}`, (value) => main[method](value)));
       first.dispose();
       expect(main[field]).toBe(payload);
     });
     it(`restores the last surviving ${name} edge in actual A-B-A order`, () => {
-      consumers.push(hub.consume(name, "^1.0.0", (payload) => main[method](payload)));
+      consumers.push(hub.consume(name, `^${version}`, (payload) => main[method](payload)));
       const a = {},
         b = {};
-      providers.push(hub.provide(name, "1.0.0", a), hub.provide(name, "1.0.0", b));
-      const newest = hub.provide(name, "1.0.0", a);
+      providers.push(hub.provide(name, version, a), hub.provide(name, version, b));
+      const newest = hub.provide(name, version, a);
       providers.push(newest);
       newest.dispose();
       expect(main[field]).toBe(b);
@@ -61,6 +62,66 @@ describe("SOFiSTiK service and command lifetime", () => {
       expect(main[field]).toBe(payload);
     });
   }
+  it("accepts only the PDF service major declared by the package manifest", () => {
+    const versions = require("../package.json").consumedServices["pdf-view"].versions;
+    for (const [range, method] of Object.entries(versions)) {
+      consumers.push(hub.consume("pdf-view", range, (payload) => main[method](payload)));
+    }
+    providers.push(hub.provide("pdf-view", "1.0.0", {}));
+    expect(main.pdfViewService).toBeNull();
+
+    const current = {};
+    providers.push(hub.provide("pdf-view", "2.0.0", current));
+    expect(main.pdfViewService).toBe(current);
+  });
+  it("requires the Launcher service version supporting opener overrides", async () => {
+    const versions = require("../package.json").consumedServices.launcher.versions;
+    for (const [range, method] of Object.entries(versions)) {
+      consumers.push(hub.consume("launcher", range, (payload) => main[method](payload)));
+    }
+    providers.push(hub.provide("launcher", "1.0.0", {}));
+    expect(main.launcherService).toBeNull();
+
+    const current = {};
+    const provider = hub.provide("launcher", "1.1.0", current);
+    providers.push(provider);
+    const runtime = await main.ensureRuntime();
+    expect(main.launcherService).toBe(current);
+    expect(runtime.launcherService).toBe(current);
+
+    provider.dispose();
+    expect(main.launcherService).toBeNull();
+    expect(runtime.launcherService).toBeNull();
+  });
+  it("cancels an unfinished PDF help operation when its runtime is disposed", async () => {
+    const runtime = await main.ensureRuntime();
+    const open = jasmine.createSpy("pending PDF opening").and.callFake((filePath, { signal }) => {
+      if (!signal) return Promise.reject(new Error("Missing cancellation signal."));
+      return new Promise((resolve, reject) => {
+        signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+      });
+    });
+    providers.push(main.consumePdfView({ open }));
+    const activate = spyOn(lumine.packages, "activatePackage").and.callThrough();
+    const workspaceOpen = spyOn(lumine.workspace, "open").and.resolveTo();
+    const opening = runtime.getViewer("manual.pdf", "LC", true).then(
+      () => ({ resolved: true }),
+      (error) => ({ error }),
+    );
+
+    expect(open).toHaveBeenCalledTimes(1);
+    const signal = open.calls.mostRecent().args[1].signal;
+    expect(signal).toBe(runtime.abortController.signal);
+    expect(signal?.aborted).toBe(false);
+
+    await lumine.packages.deactivatePackage("sofistik-tools");
+
+    expect(runtime.isActive()).toBe(false);
+    expect(signal?.aborted).toBe(true);
+    expect((await opening).error).toBe(runtime.abortController.signal.reason);
+    expect(activate).not.toHaveBeenCalled();
+    expect(workspaceOpen).not.toHaveBeenCalled();
+  });
   it("does not recreate a native help picker from a copied retired Core command handler", async () => {
     const runtime = await main.ensureRuntime();
     spyOn(runtime, "resolveEnvironment").and.returnValue(null);

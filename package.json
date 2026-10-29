@@ -74,7 +74,12 @@
     },
     "pdf-view": {
       "versions": {
-        "^1.0.0": "consumePdfView"
+        "^2.0.0": "consumePdfView"
+      }
+    },
+    "launcher": {
+      "versions": {
+        "^1.1.0": "consumeLauncher"
       }
     }
   },

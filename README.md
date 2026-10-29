@@ -6,7 +6,7 @@ Commands and integrations for SOFiSTiK structural analysis workflows.
 
 ## Features
 
-- **Help system**: open PDF manuals in [pdf-view](https://github.com/lumine-code/pdf-view) with jump-to-command support for programs and include fragments.
+- **Help system**: open PDF manuals through a PDF viewer service at the top of the page containing a program or include fragment's command.
 - **Calculation**: run WPS/SPS directly from the editor.
 - **Inline Run**: run an active PROG block in WPS from its Code Lens action, independently of the cursor position.
 - **Native applications**: choose an installed SOFiSTiK release in [Launcher Open](docs/2_Architecture.md#native-application-opening) while preserving automatic external file handling.
@@ -82,7 +82,7 @@ Commands available in `lumine-workspace`:
 
 Actions shown for `.sofistik-tools.help-list`:
 
-- `sofistik-tools:open-in`: open the selected manual with its default opener at the query destination,
+- `sofistik-tools:open-in`: open the selected manual in the PDF viewer at the query destination,
 - `sofistik-tools:open-ex`: open the selected manual in the system PDF viewer,
 - `sofistik-tools:open-help-with`: choose how and where to open the manual at the query destination,
 - `sofistik-tools:show-help-in-folder`: reveal the selected manual in the system file manager,
@@ -137,7 +137,8 @@ The examples list can be restyled from your `styles.css`, e.g.:
 - `background-tips.provider`: provided to background-tips to explain calculation commands.
 - `tree-view.selection`: consumed to read the selected paths for the tree-view commands (open, clean, wing-fix).
 - `open-external`: consumed to resolve automatic native application releases from the adjacent `sofistik.def` or installed-release fallback, independently of explicit Launcher choices.
-- `pdf-view`: consumed to open and reuse PDF manual viewers with named-destination navigation.
+- `pdf-view` (2.0): consumed to open and reuse PDF manual viewers at the top of named destinations' pages; a provider must be active for help to open in the editor.
+- `launcher` (1.1): consumed to choose a manual opener and destination while preserving page-top navigation through the active PDF service.
 
 ## Contributing
 

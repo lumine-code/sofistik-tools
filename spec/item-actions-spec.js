@@ -1,7 +1,6 @@
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
-const { pathToFileURL } = require("url");
 
 describe("sofistik-tools item actions", () => {
   let mainModule, helpList, sofDir;
@@ -47,9 +46,7 @@ describe("sofistik-tools item actions", () => {
 
     const openIn = byCommand.get("sofistik-tools:open-in");
     expect(openIn.name).toBe("Open In");
-    expect(openIn.description).toBe(
-      "Open the manual with its default opener at the query destination.",
-    );
+    expect(openIn.description).toBe("Open the manual in the PDF viewer at the query destination.");
     expect(openIn.primary).toBe(true);
     expect(openIn.context).toBe("item");
 
@@ -175,16 +172,59 @@ describe("sofistik-tools item actions", () => {
     helpList.items = [item];
     await helpList.selectList.setItems([item]);
     await helpList.selectList.setQuery("aqua:grp 1");
-    spyOn(lumine.workspace, "open").and.resolveTo();
+    const open = jasmine.createSpy("open PDF").and.resolveTo(null);
+    mainModule.owner.consumePdfView({ open });
 
     await helpList.selectList.runAction("sofistik-tools:open-in");
 
-    const expectedURI = pathToFileURL(path.join(sofDir, "aqua_1.pdf"));
-    expectedURI.hash = "nameddest=GRP1";
-    expect(lumine.workspace.open).toHaveBeenCalledTimes(1);
-    const [uri, options] = lumine.workspace.open.calls.mostRecent().args;
-    expect(uri).toBe(expectedURI.href);
+    expect(open).toHaveBeenCalledTimes(1);
+    const [filePath, options] = open.calls.mostRecent().args;
+    expect(filePath).toBe(path.join(sofDir, "aqua_1.pdf"));
+    expect(options.dest).toBe("GRP1");
     expect(options.pending).toBe(lumine.config.get("core.allowPendingPaneItems"));
+    expect(options.destinationMode).toBe("page");
+  });
+
+  it("keeps the parsed destination and original pane for the chosen PDF opener", async () => {
+    const item = {
+      fileName: "aqua_1.pdf",
+      filePath: path.join(os.tmpdir(), "aqua_1.pdf"),
+      displayName: "AQUA",
+      suffix: "",
+    };
+    spyOn(helpList, "loadItems").and.resolveTo([item]);
+    await helpList.selectListHost.show();
+    await helpList.selectList.setQuery("aqua:grp 1");
+    const pane = helpList.openingPane;
+    const open = jasmine.createSpy("open chosen PDF").and.resolveTo(null);
+    const choose = jasmine.createSpy("choose help opener").and.resolveTo(null);
+    mainModule.owner.consumePdfView({ open, openerId: "manual-pdf" });
+    mainModule.owner.consumeLauncher({ open: choose });
+
+    await helpList.selectList.runAction("sofistik-tools:open-help-with");
+
+    expect(choose).toHaveBeenCalledTimes(1);
+    const options = choose.calls.mostRecent().args[0];
+    expect(options.path).toBe(item.filePath);
+    expect(options.pane).toBe(pane);
+    expect(options.uriFragment).toBe("nameddest=GRP1");
+    expect(open).not.toHaveBeenCalled();
+    pane.splitRight().activate();
+    const controller = new AbortController();
+    await options.openerOverrides[0].open(item.filePath, {
+      pane: options.pane,
+      pending: false,
+      signal: controller.signal,
+    });
+
+    expect(open).toHaveBeenCalledOnceWith(item.filePath, {
+      dest: "GRP1",
+      destinationMode: "page",
+      pane,
+      pending: false,
+      signal: controller.signal,
+      activatePane: true,
+    });
   });
 
   it("shows the actions as a flow step and runs one against the master list", async () => {
