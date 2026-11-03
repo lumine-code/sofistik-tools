@@ -85,14 +85,22 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "eslint": "^10.13.0",
+    "eslint": "^10.14.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-n": "^18.5.0",
-    "globals": "^17.13.0",
+    "globals": "^17.14.0",
     "prettier": "^3.9.10"
   },
   "dependencies": {
-    "@lumine-code/sofistik-schema": "github:lumine-code/sofistik-schema#1a21506f0671eff7418ae206fa6379de24f7c39f",
-    "@lumine-code/sofistik-context": "github:lumine-code/sofistik-context#6740410e9093e2237c3f76e84751bffb46ea0e5c"
+    "@lumine-code/sofistik-schema": "github:lumine-code/sofistik-schema#455cc6befcc6f35542566bca74e1b23f35731f80",
+    "@lumine-code/sofistik-context": "github:lumine-code/sofistik-context#537ff466979dd9feaba1561c61750f6de05ccdb6"
+  },
+  "overrides": {
+    "eslint@^10.14.0": {
+      "minimatch": "11.0.4"
+    },
+    "@eslint/config-array@0.23.5": {
+      "minimatch": "11.0.4"
+    }
   }
 }
