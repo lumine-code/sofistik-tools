@@ -97,7 +97,7 @@ describe("SOFiSTiK include help", () => {
       editor.setCursorBufferPosition([0, Infinity]);
       const target = lumine.views.getView(editor);
       const help = spyOn(runtime, "currentHelp").and.callThrough();
-      for (const altKey of [false, true]) {
+      for (const [index, altKey] of [false, true].entries()) {
         const event = new KeyboardEvent("keydown", {
           key: "F6",
           code: "F6",
@@ -107,8 +107,12 @@ describe("SOFiSTiK include help", () => {
         });
         Object.defineProperty(event, "target", { value: target });
         lumine.keymaps.handleKeyboardEvent(event);
+        expect(help).toHaveBeenCalledTimes(index + 1);
+        const call = help.calls.mostRecent();
+        expect(call.args).toEqual([index + 1]);
+        expect(call.returnValue).toEqual(jasmine.any(Promise));
+        await call.returnValue;
       }
-      await Promise.all(help.calls.all().map((call) => call.returnValue));
       expect(help).toHaveBeenCalledTimes(2);
 
       expect(calls()).toEqual([
