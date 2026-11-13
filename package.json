@@ -89,7 +89,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-n": "^18.5.0",
     "globals": "^17.14.0",
-    "prettier": "^3.10.0"
+    "prettier": "^3.10.1"
   },
   "dependencies": {
     "@lumine-code/sofistik-schema": "github:lumine-code/sofistik-schema#f2dc80773de12c3d3d60a4e08e2a95220f1a56e2",
