@@ -644,9 +644,9 @@ describe("sofistik-tools", () => {
           mainModule.openTreePaths(method[4].toLowerCase() + method.slice(5));
         else mainModule[method](source);
 
-        expect(warning).toHaveBeenCalledOnceWith(
-          `File doesn't exists "${output.replace(/\\/g, "\\\\")}"`,
-        );
+        expect(warning).toHaveBeenCalledOnceWith("SOFiSTiK file not found", {
+          detail: `Path: ${output}`,
+        });
       });
     }
 
