@@ -3,11 +3,12 @@ const os = require("node:os");
 const path = require("node:path");
 
 const MODULES = {
-  AQUA: "CONC",
-  SOFIMSHC: "SPTP",
-  SOFILOAD: "LC",
-  DECREATOR: "DSID",
-  TENDON: "AXES",
+  AQUA: ["CONC", "MAT"],
+  AQB: ["COMB", "NSTR"],
+  SOFIMSHC: ["SPTP"],
+  SOFILOAD: ["LC"],
+  DECREATOR: ["DSID"],
+  TENDON: ["AXES"],
 };
 const INCLUDES = [
   ["aqa.include", "AQUA"],
@@ -55,7 +56,7 @@ describe("SOFiSTiK include help", () => {
       resolve: () => ({ version: "2026", language: "en" }),
     };
     runtime.dataProvider = {
-      forRelease: () => ({ getModuleCommands: (module) => [MODULES[module]].filter(Boolean) }),
+      forRelease: () => ({ getModuleCommands: (module) => MODULES[module] || [] }),
     };
     for (const module of Object.keys(MODULES)) {
       fs.writeFileSync(path.join(directory, `${module.toLowerCase()}_1.pdf`), "manual");
@@ -77,8 +78,10 @@ describe("SOFiSTiK include help", () => {
   });
 
   for (const [filename, module] of INCLUDES) {
+    const [command] = MODULES[module];
+
     it(`dispatches both help commands for ${filename} without a PROG header`, async () => {
-      const editor = await openSource(filename, `${MODULES[module]} 1\n`);
+      const editor = await openSource(filename, `${command} 1\n`);
       expect(editor.getGrammar().scopeName).toBe(`source.sofistik.include.${module.toLowerCase()}`);
       editor.setCursorBufferPosition([0, Infinity]);
       const element = lumine.views.getView(editor);
@@ -87,13 +90,13 @@ describe("SOFiSTiK include help", () => {
       await lumine.commands.dispatch(element, "sofistik-tools:separately-help");
 
       expect(calls()).toEqual([
-        { manual: `${module.toLowerCase()}_1.pdf`, destination: MODULES[module], reuse: true },
-        { manual: `${module.toLowerCase()}_1.pdf`, destination: MODULES[module], reuse: false },
+        { manual: `${module.toLowerCase()}_1.pdf`, destination: command, reuse: true },
+        { manual: `${module.toLowerCase()}_1.pdf`, destination: command, reuse: false },
       ]);
     });
 
     it(`resolves F6 and Alt-F6 in ${filename} without calculation bindings`, async () => {
-      const editor = await openSource(filename, `${MODULES[module]} 1\n`);
+      const editor = await openSource(filename, `${command} 1\n`);
       editor.setCursorBufferPosition([0, Infinity]);
       const target = lumine.views.getView(editor);
       const help = spyOn(runtime, "currentHelp").and.callThrough();
@@ -116,8 +119,8 @@ describe("SOFiSTiK include help", () => {
       expect(help).toHaveBeenCalledTimes(2);
 
       expect(calls()).toEqual([
-        { manual: `${module.toLowerCase()}_1.pdf`, destination: MODULES[module], reuse: true },
-        { manual: `${module.toLowerCase()}_1.pdf`, destination: MODULES[module], reuse: false },
+        { manual: `${module.toLowerCase()}_1.pdf`, destination: command, reuse: true },
+        { manual: `${module.toLowerCase()}_1.pdf`, destination: command, reuse: false },
       ]);
       expect(
         lumine.keymaps.findKeyBindings({ target, command: "sofistik-tools:calculation-wps" }),
@@ -178,17 +181,58 @@ describe("SOFiSTiK include help", () => {
     expect(calls()).toEqual([{ manual: "aqua_1.pdf", destination: "CONC", reuse: true }]);
   });
 
-  it("ignores directives and commands in comments, quoted prose and macros", async () => {
+  it("ignores directives and commands in comments and quoted prose", async () => {
     const editor = await openSource(
       "aqa.include",
-      "CONC 1\n$ +PROG SOFILOAD\nHEAD '; CONC 2; +PROG SOFILOAD'\n" +
-        "#DEFINE hidden\n+PROG SOFILOAD\n#ENDDEF\n! ignored; CONC 3\n\n",
+      "CONC 1\n$ +PROG SOFILOAD\nHEAD '; MAT 2; +PROG SOFILOAD'\n! ignored; MAT 3\n",
     );
-    editor.setCursorBufferPosition([7, 0]);
+    editor.setCursorBufferPosition([4, 0]);
 
     await runtime.currentHelp(1);
 
     expect(calls()).toEqual([{ manual: "aqua_1.pdf", destination: "CONC", reuse: true }]);
+  });
+
+  it("uses the macro's PROG and recognizes the command across the whole cursor line", async () => {
+    const editor = await openSource(
+      "main.dat",
+      "$PROG AQUA\nCONC 1\n#DEFINE design\n+PROG AQB\nCOMB GMAX LCST 9111\n" +
+        "  NSTR SERV CHKC -0.66 CHKR 0.80\nEND\n#ENDDEF\n",
+    );
+    const element = lumine.views.getView(editor);
+    const positions = [
+      [5, 0],
+      [5, 2],
+      [5, 4],
+      [5, Infinity],
+      [8, 0],
+    ];
+    for (const position of positions) {
+      editor.setCursorBufferPosition(position);
+      await lumine.commands.dispatch(element, "sofistik-tools:current-help");
+    }
+
+    expect(calls()).toEqual(
+      positions.map(() => ({ manual: "aqb_1.pdf", destination: "NSTR", reuse: true })),
+    );
+  });
+
+  it("checks the cursor statement without looking past the next semicolon", async () => {
+    const line = "  COMB GMAX;  NSTRX 1;\tNSTR SERV";
+    const editor = await openSource("main.dat", `+PROG AQB\n${line}\n`);
+    const positions = [0, line.indexOf(";"), line.indexOf("NSTRX") + 4, line.lastIndexOf(";") + 1];
+    for (const column of positions) {
+      editor.setCursorBufferPosition([1, column]);
+      await runtime.currentHelp(1);
+    }
+
+    expect(calls()).toEqual(
+      ["COMB", "COMB", "COMB", "NSTR"].map((destination) => ({
+        manual: "aqb_1.pdf",
+        destination,
+        reuse: true,
+      })),
+    );
   });
 
   it("uses the clicked source editor when another editor has focus", async () => {
