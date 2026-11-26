@@ -574,6 +574,7 @@ describe("sofistik-tools", () => {
         expect(await Promise.all(results)).toEqual([undefined, 4242, undefined]);
         expect(warning).toHaveBeenCalledOnceWith("Cannot open 2 missing SOFiSTiK files.", {
           detail: [outputs[0], outputs[2]].join("\n"),
+          detailCollapsed: true,
         });
         if (executable) {
           expect(launch).toHaveBeenCalledOnceWith(
@@ -602,6 +603,7 @@ describe("sofistik-tools", () => {
         ]);
         expect(warning).toHaveBeenCalledOnceWith("Cannot open 1 missing SOFiSTiK file.", {
           detail: output,
+          detailCollapsed: false,
         });
         expect(launch).not.toHaveBeenCalled();
         expect(open).not.toHaveBeenCalled();
@@ -705,6 +707,7 @@ describe("sofistik-tools", () => {
       expect(mainModule.openTreePaths("openReport")).toEqual([undefined, undefined]);
       expect(warning).toHaveBeenCalledOnceWith("Cannot open 2 missing SOFiSTiK files.", {
         detail: sources.map((filePath) => mainModule.changeExtension(filePath, ".cdb")).join("\n"),
+        detailCollapsed: true,
       });
       expect(launch).not.toHaveBeenCalled();
     });
@@ -921,6 +924,62 @@ describe("sofistik-tools", () => {
       expect(result.changed.length).toBe(2);
       expect(result.failed).toEqual([]);
       expect(fs.readdirSync(dir).sort()).toEqual(["keep.cdb", "keep.dat"]);
+    });
+
+    it("reports partial deletion with collapsed details in the originating window", async () => {
+      const dir = makeTempDir();
+      const blocked = path.join(dir, "model.cdb");
+      const removable = path.join(dir, "model.plb");
+      fs.writeFileSync(blocked, "x");
+      fs.writeFileSync(removable, "x");
+      const message = `EBUSY: resource busy or locked, unlink '${blocked}'`;
+      const unlink = fs.unlinkSync;
+      spyOn(fs, "unlinkSync").and.callFake((file) => {
+        if (file === blocked) {
+          throw Object.assign(new Error(message), { code: "EBUSY", syscall: "unlink" });
+        }
+        return unlink(file);
+      });
+      const warning = spyOn(lumine.notifications, "addWarning");
+      const window = lumine.workspace.getMainWindow();
+      const operation = mainModule.operation({ window });
+      const previousPaths = lumine.project.getPaths();
+      try {
+        lumine.project.setPaths([dir]);
+        const result = await operation.cleanByPaths([dir], { level: 4 });
+
+        expect(result.changed).toEqual([removable]);
+        expect(result.failed).toEqual([
+          { path: blocked, phase: "mutation", code: "EBUSY", message, syscall: "unlink" },
+        ]);
+        expect(fs.readdirSync(dir)).toEqual(["model.cdb"]);
+        expect(warning).toHaveBeenCalledOnceWith("Deleted 1 file. Could not delete 1.", {
+          detail: "model.cdb — EBUSY: resource busy or locked",
+          detailCollapsed: true,
+          dismissable: true,
+          window,
+        });
+      } finally {
+        lumine.project.setPaths(previousPaths);
+      }
+    });
+
+    it("reports a missing selected folder as a scan failure", async () => {
+      const missing = path.join(makeTempDir(), "missing");
+      const warning = spyOn(lumine.notifications, "addWarning");
+      const result = await mainModule.cleanByPaths([missing], { level: 4 });
+
+      expect(result.changed).toEqual([]);
+      expect(result.failed.length).toBe(1);
+      expect(result.failed[0]?.path).toBe(missing);
+      expect(result.failed[0]?.phase).toBe("scan");
+      expect(result.failed[0]?.code).toBe("ENOENT");
+      expect(warning).toHaveBeenCalledOnceWith("Could not scan 1 selected folder.", {
+        detail: `${missing} — ENOENT: no such file or directory`,
+        detailCollapsed: true,
+        dismissable: true,
+        window: undefined,
+      });
     });
   });
 
